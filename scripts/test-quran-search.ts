@@ -13,6 +13,7 @@ async function testQuranSearch() {
     "Tell me about Prophet Moses",
     "What is guidance about charity?",
     "What is the purpose of life?",
+    "How can I address my deep sadness?"
   ];
 
   for (const query of testQueries) {
