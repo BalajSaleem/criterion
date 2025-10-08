@@ -10,7 +10,7 @@ export const chatModels: ChatModel[] = [
   {
     id: "chat-model",
     name: "Talk",
-    description: "General purpose conversational model",
+    description: "A general purpose conversational model",
   },
   {
     id: "chat-model-reasoning",
