@@ -14,6 +14,7 @@ interface QuranVerseData {
   surahNumber: number;
   ayahNumber: number;
   textEnglish: string;
+  textArabic: string;
 }
 
 // Surah names mapping (1-114)
@@ -134,15 +135,18 @@ const surahNames: Record<number, { english: string; arabic: string }> = {
   114: { english: "An-Nas", arabic: "الناس" },
 };
 
-async function parseQuranFile(filePath: string): Promise<QuranVerseData[]> {
+async function parseQuranFile(
+  filePath: string,
+  isArabic: boolean = false
+): Promise<Map<string, string>> {
   const content = fs.readFileSync(filePath, "utf-8");
   const lines = content.trim().split("\n");
-  const verses: QuranVerseData[] = [];
+  const verses = new Map<string, string>(); // key: "surah:ayah", value: text
 
   for (const line of lines) {
     if (!line.trim()) continue;
 
-    // Format: 001|001|Text here
+    // Format: 001|001|Text here or surah|ayah|Text here
     const parts = line.split("|");
     if (parts.length !== 3) {
       console.warn(`⚠️  Skipping malformed line: ${line}`);
@@ -151,17 +155,37 @@ async function parseQuranFile(filePath: string): Promise<QuranVerseData[]> {
 
     const surahNumber = Number.parseInt(parts[0], 10);
     const ayahNumber = Number.parseInt(parts[1], 10);
-    const textEnglish = parts[2].trim();
+    const text = parts[2].trim();
 
     if (isNaN(surahNumber) || isNaN(ayahNumber)) {
       console.warn(`⚠️  Invalid surah/ayah numbers in: ${line}`);
       continue;
     }
 
+    const key = `${surahNumber}:${ayahNumber}`;
+    verses.set(key, text);
+  }
+
+  return verses;
+}
+
+function mergeQuranData(
+  englishMap: Map<string, string>,
+  arabicMap: Map<string, string>
+): QuranVerseData[] {
+  const verses: QuranVerseData[] = [];
+
+  for (const [key, textEnglish] of englishMap.entries()) {
+    const [surahStr, ayahStr] = key.split(":");
+    const surahNumber = Number.parseInt(surahStr, 10);
+    const ayahNumber = Number.parseInt(ayahStr, 10);
+    const textArabic = arabicMap.get(key) || "";
+
     verses.push({
       surahNumber,
       ayahNumber,
       textEnglish,
+      textArabic,
     });
   }
 
@@ -184,22 +208,37 @@ async function ingestQuran() {
   const db = drizzle(client);
 
   // Check for quran.txt in both root and data folder
-  let quranPath = path.join(process.cwd(), "quran.txt");
-  if (!fs.existsSync(quranPath)) {
-    quranPath = path.join(process.cwd(), "data", "quran.txt");
+  let quranEnglishPath = path.join(process.cwd(), "quran.txt");
+  if (!fs.existsSync(quranEnglishPath)) {
+    quranEnglishPath = path.join(process.cwd(), "data", "quran.txt");
   }
 
-  if (!fs.existsSync(quranPath)) {
+  if (!fs.existsSync(quranEnglishPath)) {
     throw new Error(
       "quran.txt not found. Please place it in the root folder or data folder."
     );
   }
 
-  console.log(`📖 Reading Quran from: ${quranPath}`);
+  // Check for quran-arabic.txt
+  let quranArabicPath = path.join(process.cwd(), "quran-arabic.txt");
+  if (!fs.existsSync(quranArabicPath)) {
+    quranArabicPath = path.join(process.cwd(), "data", "quran-arabic.txt");
+  }
 
-  // 1. Parse Quran file
-  const verses = await parseQuranFile(quranPath);
-  console.log(`✅ Parsed ${verses.length} verses\n`);
+  if (!fs.existsSync(quranArabicPath)) {
+    throw new Error(
+      "quran-arabic.txt not found. Please place it in the root folder or data folder."
+    );
+  }
+
+  console.log(`📖 Reading English Quran from: ${quranEnglishPath}`);
+  console.log(`📖 Reading Arabic Quran from: ${quranArabicPath}`);
+
+  // 1. Parse Quran files
+  const englishMap = await parseQuranFile(quranEnglishPath, false);
+  const arabicMap = await parseQuranFile(quranArabicPath, true);
+  const verses = mergeQuranData(englishMap, arabicMap);
+  console.log(`✅ Parsed ${verses.length} verses (English + Arabic)\n`);
 
   // 2. Insert verses into database with surah names
   console.log("💾 Inserting verses into database...");
@@ -208,7 +247,7 @@ async function ingestQuran() {
     ayahNumber: v.ayahNumber,
     surahNameEnglish: surahNames[v.surahNumber]?.english || "Unknown",
     surahNameArabic: surahNames[v.surahNumber]?.arabic || "غير معروف",
-    textArabic: "", // English-only for now
+    textArabic: v.textArabic,
     textEnglish: v.textEnglish,
   }));
 

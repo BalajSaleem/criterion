@@ -58,9 +58,9 @@ export async function findRelevantVerses(userQuery: string) {
     })
     .from(quranEmbedding)
     .innerJoin(quranVerse, eq(quranEmbedding.verseId, quranVerse.id))
-    .where(gt(similarity, 0.5)) // Minimum 50% similarity
+    .where(gt(similarity, 0.3)) // Minimum 30% similarity
     .orderBy(desc(similarity))
-    .limit(5); // Top 5 results
+    .limit(25); // Top 25 results
 
   return results;
 }

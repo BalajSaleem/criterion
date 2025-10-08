@@ -16,6 +16,7 @@
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
     "db:enable-pgvector": "npx tsx scripts/enable-pgvector.ts",
+    "clear:quran": "npx tsx scripts/clear-quran-data.ts",
     "ingest:quran": "npx tsx scripts/ingest-quran.ts",
     "test:quran": "npx tsx scripts/test-quran-search.ts",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"

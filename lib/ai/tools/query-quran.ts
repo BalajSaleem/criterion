@@ -23,9 +23,13 @@ export const queryQuran = tool({
       };
     }
 
+    console.log(`[queryQuran] Found ${verses.length} verses for question: "${question}"`);
+    console.log(`[queryQuran] Top match: ${verses[0].surahNameEnglish} ${verses[0].surahNumber}:${verses[0].ayahNumber} (${(verses[0].similarity * 100).toFixed(1)}% similarity)`);
+
     // Format verses for LLM
     const formattedVerses = verses.map((v) => ({
       reference: `${v.surahNameEnglish} ${v.surahNumber}:${v.ayahNumber}`,
+      surahArabic: v.surahNameArabic,
       arabic: v.textArabic,
       english: v.textEnglish,
       relevance: `${(v.similarity * 100).toFixed(1)}%`,
