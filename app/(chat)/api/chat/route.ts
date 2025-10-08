@@ -24,6 +24,7 @@ import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
+import { queryQuran } from "@/lib/ai/tools/query-quran";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
@@ -188,6 +189,7 @@ export async function POST(request: Request) {
                   "createDocument",
                   "updateDocument",
                   "requestSuggestions",
+                  "queryQuran",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -198,6 +200,7 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            queryQuran,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

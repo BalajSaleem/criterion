@@ -2,6 +2,8 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  index,
+  integer,
   json,
   jsonb,
   pgTable,
@@ -10,6 +12,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 import type { AppUsage } from "../usage";
 
@@ -171,3 +174,40 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// Quran verses table
+export const quranVerse = pgTable("QuranVerse", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  surahNumber: integer("surahNumber").notNull(),
+  ayahNumber: integer("ayahNumber").notNull(),
+  surahNameEnglish: varchar("surahNameEnglish", { length: 100 }).notNull(),
+  surahNameArabic: varchar("surahNameArabic", { length: 100 }).notNull(),
+  textArabic: text("textArabic").notNull(),
+  textEnglish: text("textEnglish").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type QuranVerse = InferSelectModel<typeof quranVerse>;
+
+// Embeddings table for vector similarity search
+export const quranEmbedding = pgTable(
+  "QuranEmbedding",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    verseId: uuid("verseId")
+      .notNull()
+      .references(() => quranVerse.id, { onDelete: "cascade" }),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    content: text("content").notNull(), // English text for search
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    // HNSW index for fast similarity search
+    embeddingIdx: index("embedding_hnsw_idx").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    ),
+  })
+);
+
+export type QuranEmbedding = InferSelectModel<typeof quranEmbedding>;
