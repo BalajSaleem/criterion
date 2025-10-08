@@ -34,6 +34,26 @@ async function testQuranSearch() {
         console.log(`${i + 1}. ${verse.surahNameEnglish} ${verse.surahNumber}:${verse.ayahNumber}`);
         console.log(`   📖 "${verse.textEnglish}"`);
         console.log(`   📊 Similarity: ${(verse.similarity * 100).toFixed(1)}%`);
+
+        // Show context for top 3
+        if (verse.hasContext && i < 3) {
+          console.log(`   📚 Context Window: ${verse.surahNumber}:${verse.contextBefore[0]?.ayahNumber || verse.ayahNumber}-${verse.contextAfter[verse.contextAfter.length - 1]?.ayahNumber || verse.ayahNumber}`);
+          
+          if (verse.contextBefore.length > 0) {
+            console.log(`   ⬆️  Context Before (${verse.contextBefore.length} verses):`);
+            verse.contextBefore.forEach((c) => {
+              console.log(`      [${verse.surahNumber}:${c.ayahNumber}] ${c.textEnglish.substring(0, 80)}...`);
+            });
+          }
+          
+          if (verse.contextAfter.length > 0) {
+            console.log(`   ⬇️  Context After (${verse.contextAfter.length} verses):`);
+            verse.contextAfter.forEach((c) => {
+              console.log(`      [${verse.surahNumber}:${c.ayahNumber}] ${c.textEnglish.substring(0, 80)}...`);
+            });
+          }
+        }
+        
         console.log();
       });
     } catch (error) {

@@ -197,7 +197,7 @@ export const quranEmbedding = pgTable(
     verseId: uuid("verseId")
       .notNull()
       .references(() => quranVerse.id, { onDelete: "cascade" }),
-    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    embedding: vector("embedding", { dimensions: 768 }).notNull(), // Gemini text-embedding-004
     content: text("content").notNull(), // English text for search
     createdAt: timestamp("createdAt").notNull().defaultNow(),
   },
