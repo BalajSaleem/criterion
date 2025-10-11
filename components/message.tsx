@@ -237,7 +237,6 @@ export const ThinkingMessage = () => {
   const loadingMessages = [
     "Searching the Quran...",
     "Gathering verses...",
-    "Seeking divine guidance...",
     "Consulting the sacred text...",
     "Finding relevant passages...",
     "Preparing your answer...",
