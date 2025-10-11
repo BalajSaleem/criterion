@@ -315,3 +315,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Arabic text styling */
+.font-arabic {
+  font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", "Arabic Typesetting", serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}

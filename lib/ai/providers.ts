@@ -25,7 +25,7 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model": gateway.languageModel("xai/grok-4"),
+        "chat-model": gateway.languageModel("openai/gpt-5-mini"),
         "chat-model-reasoning": wrapLanguageModel({
           model: gateway.languageModel("xai/grok-4"),
           middleware: extractReasoningMiddleware({ tagName: "think" }),

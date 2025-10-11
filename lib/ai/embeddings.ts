@@ -74,7 +74,7 @@ async function getContextVerses(
 
 /**
  * Find relevant Quranic verses using semantic search
- * Returns top 20 verses, with ±5 context verses for the top 3 most relevant
+ * Returns top 10 verses, with ±2 context verses for the top 3 most relevant
  */
 export async function findRelevantVerses(userQuery: string) {
   // 1. Embed the user's question (using RETRIEVAL_QUERY task type)
@@ -102,7 +102,7 @@ export async function findRelevantVerses(userQuery: string) {
     .innerJoin(quranVerse, eq(quranEmbedding.verseId, quranVerse.id))
     .where(gt(similarity, 0.3)) // Minimum 30% similarity (lowered from 50%)
     .orderBy(desc(similarity))
-    .limit(20); // Top 20 results (increased from 5)
+    .limit(10); // Top 10 results (increased from 5)
 
   // 4. For the top 3 results, fetch ±5 context verses
   const enhancedResults = await Promise.all(

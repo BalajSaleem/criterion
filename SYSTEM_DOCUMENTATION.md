@@ -735,9 +735,12 @@ const embedding = await generateEmbedding(contextualizedText);
 
 ## 📚 Useful Resources
 
-### Documentation
+### Documentation - IMPORTANT: Use Context7 tool to read about docs
 
 - [Vercel AI SDK Docs](https://sdk.vercel.ai/docs)
+- [RAG AI Agent](https://ai-sdk.dev/cookbook/guides/rag-chatbot)
+- [Vercel AI Gateway](https://vercel.com/docs/ai-gateway)
+
 - [Drizzle ORM Docs](https://orm.drizzle.team/docs/overview)
 - [pgvector Docs](https://github.com/pgvector/pgvector)
 - [Next.js App Router Docs](https://nextjs.org/docs/app)

@@ -2,7 +2,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
 import { motion } from "framer-motion";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
@@ -23,6 +23,7 @@ import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
+import { QuranVerses } from "./quran-verses";
 import { Weather } from "./weather";
 
 const PurePreviewMessage = ({
@@ -73,7 +74,7 @@ const PurePreviewMessage = ({
         )}
 
         <div
-          className={cn("flex flex-col", {
+          className={cn("flex min-w-0 flex-col", {
             "gap-2 md:gap-4": message.parts?.some(
               (p) => p.type === "text" && p.text?.trim()
             ),
@@ -267,6 +268,31 @@ const PurePreviewMessage = ({
               );
             }
 
+            if (type === "tool-queryQuran") {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={false} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-queryQuran" />
+                  <ToolContent>
+                    {(state === "input-available" || state === "output-available") && part.input && (
+                      <ToolInput input={part.input} />
+                    )}
+                    {state === "output-available" && (
+                      <ToolOutput
+                        errorText={part.errorText}
+                        output={
+                          !part.errorText && part.output ? (
+                            <QuranVerses output={part.output as any} />
+                          ) : null
+                        }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
             return null;
           })}
 
@@ -311,6 +337,24 @@ export const PreviewMessage = memo(
 
 export const ThinkingMessage = () => {
   const role = "assistant";
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  const loadingMessages = [
+    "Searching the Quran...",
+    "Gathering verses...",
+    "Seeking divine guidance...",
+    "Consulting the sacred text...",
+    "Finding relevant passages...",
+    "Preparing your answer...",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [loadingMessages.length]);
 
   return (
     <motion.div
@@ -326,8 +370,10 @@ export const ThinkingMessage = () => {
         </div>
 
         <div className="flex w-full flex-col gap-2 md:gap-4">
-          <div className="p-0 text-muted-foreground text-sm">
-            <LoadingText>Thinking...</LoadingText>
+          <div className="p-0 text-sm">
+            <LoadingText key={messageIndex}>
+              {loadingMessages[messageIndex]}
+            </LoadingText>
           </div>
         </div>
       </div>
@@ -337,23 +383,16 @@ export const ThinkingMessage = () => {
 
 const LoadingText = ({ children }: { children: React.ReactNode }) => {
   return (
-    <motion.div
-      animate={{ backgroundPosition: ["100% 50%", "-100% 50%"] }}
-      className="flex items-center text-transparent"
-      style={{
-        background:
-          "linear-gradient(90deg, hsl(var(--muted-foreground)) 0%, hsl(var(--muted-foreground)) 35%, hsl(var(--foreground)) 50%, hsl(var(--muted-foreground)) 65%, hsl(var(--muted-foreground)) 100%)",
-        backgroundSize: "200% 100%",
-        WebkitBackgroundClip: "text",
-        backgroundClip: "text",
-      }}
+    <motion.span
+      animate={{ opacity: [0.5, 1, 0.5] }}
+      className="inline-flex items-center text-muted-foreground"
       transition={{
-        duration: 1.5,
+        duration: 2,
         repeat: Number.POSITIVE_INFINITY,
-        ease: "linear",
+        ease: "easeInOut",
       }}
     >
       {children}
-    </motion.div>
+    </motion.span>
   );
 };

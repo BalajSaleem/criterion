@@ -23,7 +23,7 @@ export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
-    className={cn("not-prose mb-4 w-full rounded-md border", className)}
+    className={cn("not-prose mb-4 w-full min-w-0 overflow-hidden rounded-md border", className)}
     {...props}
   />
 );
@@ -60,6 +60,18 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
   );
 };
 
+const getToolDisplayName = (type: ToolUIPart["type"]) => {
+  const displayNames: Record<string, string> = {
+    "tool-getWeather": "Get Weather",
+    "tool-createDocument": "Create Document",
+    "tool-updateDocument": "Update Document",
+    "tool-requestSuggestions": "Request Suggestions",
+    "tool-queryQuran": "Search Quran",
+  };
+
+  return displayNames[type] || type;
+};
+
 export const ToolHeader = ({
   className,
   type,
@@ -75,7 +87,9 @@ export const ToolHeader = ({
   >
     <div className="flex min-w-0 flex-1 items-center gap-2">
       <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />
-      <span className="truncate font-medium text-sm">{type}</span>
+      <span className="truncate font-medium text-sm">
+        {getToolDisplayName(type)}
+      </span>
     </div>
     <div className="flex shrink-0 items-center gap-2">
       {getStatusBadge(state)}
@@ -105,7 +119,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
       Parameters
     </h4>
-    <div className="rounded-md bg-muted/50">
+    <div className="rounded-md bg-muted/50 overflow-x-auto">
       <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
     </div>
   </div>
@@ -127,20 +141,20 @@ export const ToolOutput = ({
   }
 
   return (
-    <div className={cn("space-y-2 p-4", className)} {...props}>
+    <div className={cn("space-y-2 overflow-hidden p-4", className)} {...props}>
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
         {errorText ? "Error" : "Result"}
       </h4>
       <div
         className={cn(
-          "overflow-x-auto rounded-md text-xs [&_table]:w-full",
+          "min-w-0 overflow-x-auto rounded-md text-xs [&_table]:w-full",
           errorText
             ? "bg-destructive/10 text-destructive"
             : "bg-muted/50 text-foreground"
         )}
       >
         {errorText && <div>{errorText}</div>}
-        {output && <div>{output}</div>}
+        {output && <div className="min-w-0">{output}</div>}
       </div>
     </div>
   );

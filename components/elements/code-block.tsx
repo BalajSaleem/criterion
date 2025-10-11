@@ -56,7 +56,8 @@ export const CodeBlock = ({
             color: "hsl(var(--foreground))",
             overflowX: "auto",
             overflowWrap: "break-word",
-            wordBreak: "break-all",
+            wordBreak: "break-word",
+            whiteSpace: "pre-wrap",
           }}
           language={language}
           lineNumberStyle={{
@@ -66,6 +67,7 @@ export const CodeBlock = ({
           }}
           showLineNumbers={showLineNumbers}
           style={oneLight}
+          wrapLongLines={true}
         >
           {code}
         </SyntaxHighlighter>
@@ -82,7 +84,8 @@ export const CodeBlock = ({
             color: "hsl(var(--foreground))",
             overflowX: "auto",
             overflowWrap: "break-word",
-            wordBreak: "break-all",
+            wordBreak: "break-word",
+            whiteSpace: "pre-wrap",
           }}
           language={language}
           lineNumberStyle={{
@@ -92,6 +95,7 @@ export const CodeBlock = ({
           }}
           showLineNumbers={showLineNumbers}
           style={oneDark}
+          wrapLongLines={true}
         >
           {code}
         </SyntaxHighlighter>
