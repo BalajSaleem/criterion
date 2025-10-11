@@ -3,7 +3,6 @@
 import { BookOpenIcon, SparklesIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import {
   Carousel,
   CarouselContent,
@@ -104,41 +103,26 @@ export const QuranVerses = ({
   return (
     <div className={cn("space-y-3", className)} {...props}>
       {/* Summary header */}
-      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <BookOpenIcon className="size-4 shrink-0" />
-          <span className="min-w-0 truncate">
-            Found {totalVerseCount} total verse{totalVerseCount !== 1 ? "s" : ""} 
-            {output.topThreeWithContext > 0 && (
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {" "}({output.topThreeWithContext} with context)
-              </span>
-            )}
-          </span>
-        </div>
-        {output.verses.length > 3 && (
-          <span className="shrink-0 text-xs">
-            Showing top 3 of {output.verses.length}
-          </span>
-        )}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <BookOpenIcon className="size-4 shrink-0" />
+        <span className="min-w-0 truncate">
+          Found {output.verses.length} verse{output.verses.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       {/* Carousel for verses */}
       <Carousel className="w-full" setApi={setApi}>
-        <CarouselContent>
-          {output.verses.slice(0, 3).map((verse, index) => (
-            <CarouselItem key={`${verse.reference}-${index}`}>
-              <VerseCard
-                showContext={true}
-                verse={verse}
-              />
+        <CarouselContent className="items-start">
+          {output.verses.map((verse, index) => (
+            <CarouselItem key={`${verse.reference}-${index}`} className="flex">
+              <VerseCard verse={verse} />
             </CarouselItem>
           ))}
         </CarouselContent>
         <div className="mt-2 flex items-center justify-center gap-2">
           <CarouselPrevious className="static translate-y-0" />
           <span className="text-muted-foreground text-sm">
-            {current + 1} of 3
+            {current + 1} of {output.verses.length}
           </span>
           <CarouselNext className="static translate-y-0" />
         </div>
@@ -147,109 +131,56 @@ export const QuranVerses = ({
   );
 };
 
-const VerseCard = ({
-  verse,
-  showContext,
-}: {
-  verse: VerseData;
-  showContext: boolean;
-}) => {
-  const quranComUrl = `https://quran.com/${verse.reference.split(" ")[1]?.replace(":", "/")}`;
+const VerseCard = ({ verse }: { verse: VerseData }) => {
+  // Determine the appropriate Quran.com link
+  const quranComUrl = verse.hasContext && verse.passageRange
+    ? `https://quran.com/${verse.passageRange.split(" ")[1]?.split("-")[0]?.replace(":", "/")}`
+    : `https://quran.com/${verse.reference.split(" ")[1]?.replace(":", "/")}`;
 
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border bg-gradient-to-br p-3 transition-all sm:p-4",
-        verse.rank <= 3
-          ? "border-emerald-200 from-emerald-50/50 to-teal-50/30 dark:border-emerald-800/50 dark:from-emerald-950/20 dark:to-teal-950/10"
-          : "border-border from-background to-muted/20"
+        "flex w-full flex-col overflow-hidden rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-3 transition-all dark:border-emerald-800/50 dark:from-emerald-950/20 dark:to-teal-950/10 sm:p-4"
       )}
     >
-      {/* Header with reference and relevance */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <a
-          className="group flex min-w-0 items-center gap-2 font-semibold text-sm transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
-          href={quranComUrl}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <SparklesIcon className="size-3.5 shrink-0 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
+      {/* Header with reference */}
+      <div className="mb-3">
+        <div className="flex min-w-0 items-center gap-2 font-semibold text-sm">
+          <SparklesIcon className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span className="truncate">{verse.reference}</span>
           <span className="shrink-0 text-muted-foreground">({verse.surahArabic})</span>
-        </a>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {verse.rank <= 3 && (
-            <Badge
-              className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-              variant="secondary"
-            >
-              Top {verse.rank}
-            </Badge>
-          )}
-          <Badge
-            className="bg-muted text-muted-foreground"
-            variant="secondary"
-          >
-            {verse.relevance} match
-          </Badge>
         </div>
       </div>
 
-      {/* Context before (if available) */}
-      {showContext && verse.hasContext && verse.contextBefore && (
-        <div className="mb-3 rounded-md border-l-2 border-muted bg-muted/30 py-2 pl-3 pr-2 overflow-hidden">
-          <p className="mb-1 font-medium text-muted-foreground text-xs uppercase">
-            Context Before
-          </p>
-          <div className="space-y-1.5 text-sm text-muted-foreground">
-            {verse.contextBefore.split("\n").map((line, i) => (
-              <p key={i} className="leading-relaxed break-words">
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Main verse - Arabic */}
-      <div className="mb-3 text-right" dir="rtl">
-        <p className="font-arabic leading-loose text-foreground text-lg break-words">
+      <div className="mb-4 text-right" dir="rtl">
+        <p className="font-arabic leading-loose text-foreground text-xl break-words">
           {verse.arabic}
         </p>
       </div>
 
       {/* Main verse - English */}
-      <div className="mb-2">
-        <p className="leading-relaxed text-foreground text-sm break-words">
+      <div className="mb-3 flex-1">
+        <p className="leading-relaxed text-foreground break-words">
           {verse.english}
         </p>
       </div>
 
-      {/* Context after (if available) */}
-      {showContext && verse.hasContext && verse.contextAfter && (
-        <div className="mt-3 rounded-md border-l-2 border-muted bg-muted/30 py-2 pl-3 pr-2 overflow-hidden">
-          <p className="mb-1 font-medium text-muted-foreground text-xs uppercase">
-            Context After
-          </p>
-          <div className="space-y-1.5 text-sm text-muted-foreground">
-            {verse.contextAfter.split("\n").map((line, i) => (
-              <p key={i} className="leading-relaxed break-words">
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Passage range (if context available) */}
-      {showContext && verse.hasContext && verse.passageRange && (
-        <div className="mt-3 text-center">
-          <p className="text-muted-foreground text-xs">
-            Full passage: {verse.passageRange}
-          </p>
-        </div>
-      )}
+      {/* Quran.com link */}
+      <div className="mt-auto flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50/50 px-3 py-2 dark:border-emerald-800/50 dark:bg-emerald-950/20">
+        <BookOpenIcon className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <a
+          href={quranComUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-700 text-sm hover:underline dark:text-emerald-300"
+        >
+          {verse.hasContext && verse.passageRange 
+            ? `View passage: ${verse.passageRange}`
+            : `View verse: ${verse.reference}`
+          }
+        </a>
+      </div>
     </div>
   );
 };
