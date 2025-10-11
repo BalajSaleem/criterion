@@ -1,8 +1,7 @@
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { quranVerse, quranEmbedding } from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
+import { quranEmbedding, quranVerse } from "@/lib/db/schema";
 
 config({
   path: ".env.local",

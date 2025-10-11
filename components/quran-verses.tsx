@@ -5,11 +5,11 @@ import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
 import {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +65,9 @@ export const QuranVerses = ({
   if (!output.success) {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-        <p className="text-sm">{output.message || "No relevant verses found."}</p>
+        <p className="text-sm">
+          {output.message || "No relevant verses found."}
+        </p>
       </div>
     );
   }
@@ -83,30 +85,35 @@ export const QuranVerses = ({
   // Remaining verses are just the main verse (1 each)
   const topThreeVersesWithContext = output.verses.slice(0, 3);
   const remainingVerses = output.verses.slice(3);
-  
-  let totalVerseCount = 0;
-  
+
+  let _totalVerseCount = 0;
+
   // Count verses with context (top 3)
   topThreeVersesWithContext.forEach((verse) => {
     if (verse.hasContext) {
-      const beforeCount = verse.contextBefore ? verse.contextBefore.split("\n").length : 0;
-      const afterCount = verse.contextAfter ? verse.contextAfter.split("\n").length : 0;
-      totalVerseCount += 1 + beforeCount + afterCount; // main verse + context
+      const beforeCount = verse.contextBefore
+        ? verse.contextBefore.split("\n").length
+        : 0;
+      const afterCount = verse.contextAfter
+        ? verse.contextAfter.split("\n").length
+        : 0;
+      _totalVerseCount += 1 + beforeCount + afterCount; // main verse + context
     } else {
-      totalVerseCount += 1; // just the main verse
+      _totalVerseCount += 1; // just the main verse
     }
   });
-  
+
   // Count remaining verses (no context)
-  totalVerseCount += remainingVerses.length;
+  _totalVerseCount += remainingVerses.length;
 
   return (
     <div className={cn("space-y-3", className)} {...props}>
       {/* Summary header */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 p-1 text-muted-foreground text-sm">
         <BookOpenIcon className="size-4 shrink-0" />
         <span className="min-w-0 truncate">
-          Found {output.verses.length} verse{output.verses.length !== 1 ? "s" : ""}
+          Found {output.verses.length} verse
+          {output.verses.length !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -114,7 +121,7 @@ export const QuranVerses = ({
       <Carousel className="w-full" setApi={setApi}>
         <CarouselContent className="items-start">
           {output.verses.map((verse, index) => (
-            <CarouselItem key={`${verse.reference}-${index}`} className="flex">
+            <CarouselItem className="flex" key={`${verse.reference}-${index}`}>
               <VerseCard verse={verse} />
             </CarouselItem>
           ))}
@@ -133,14 +140,15 @@ export const QuranVerses = ({
 
 const VerseCard = ({ verse }: { verse: VerseData }) => {
   // Determine the appropriate Quran.com link
-  const quranComUrl = verse.hasContext && verse.passageRange
-    ? `https://quran.com/${verse.passageRange.split(" ")[1]?.split("-")[0]?.replace(":", "/")}`
-    : `https://quran.com/${verse.reference.split(" ")[1]?.replace(":", "/")}`;
+  const quranComUrl =
+    verse.hasContext && verse.passageRange
+      ? `https://quran.com/${verse.passageRange.split(" ")[1]?.split("-")[0]?.replace(":", "/")}`
+      : `https://quran.com/${verse.reference.split(" ")[1]?.replace(":", "/")}`;
 
   return (
     <div
       className={cn(
-        "flex w-full flex-col overflow-hidden rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-3 transition-all dark:border-emerald-800/50 dark:from-emerald-950/20 dark:to-teal-950/10 sm:p-4"
+        "flex w-full flex-col overflow-hidden rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-3 transition-all sm:p-4 dark:border-emerald-800/50 dark:from-emerald-950/20 dark:to-teal-950/10"
       )}
     >
       {/* Header with reference */}
@@ -148,20 +156,22 @@ const VerseCard = ({ verse }: { verse: VerseData }) => {
         <div className="flex min-w-0 items-center gap-2 font-semibold text-sm">
           <SparklesIcon className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span className="truncate">{verse.reference}</span>
-          <span className="shrink-0 text-muted-foreground">({verse.surahArabic})</span>
+          <span className="shrink-0 text-muted-foreground">
+            ({verse.surahArabic})
+          </span>
         </div>
       </div>
 
       {/* Main verse - Arabic */}
       <div className="mb-4 text-right" dir="rtl">
-        <p className="font-arabic leading-loose text-foreground text-xl break-words">
+        <p className="break-words font-arabic text-foreground text-xl leading-loose">
           {verse.arabic}
         </p>
       </div>
 
       {/* Main verse - English */}
       <div className="mb-3 flex-1">
-        <p className="leading-relaxed text-foreground break-words">
+        <p className="break-words text-foreground leading-relaxed">
           {verse.english}
         </p>
       </div>
@@ -170,15 +180,14 @@ const VerseCard = ({ verse }: { verse: VerseData }) => {
       <div className="mt-auto flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50/50 px-3 py-2 dark:border-emerald-800/50 dark:bg-emerald-950/20">
         <BookOpenIcon className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
         <a
-          href={quranComUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           className="text-emerald-700 text-sm hover:underline dark:text-emerald-300"
+          href={quranComUrl}
+          rel="noopener noreferrer"
+          target="_blank"
         >
-          {verse.hasContext && verse.passageRange 
+          {verse.hasContext && verse.passageRange
             ? `View passage: ${verse.passageRange}`
-            : `View verse: ${verse.reference}`
-          }
+            : `View verse: ${verse.reference}`}
         </a>
       </div>
     </div>

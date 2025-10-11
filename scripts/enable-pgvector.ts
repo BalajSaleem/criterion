@@ -26,7 +26,9 @@ async function enablePgVector() {
     `;
 
     if (result.length > 0) {
-      console.log(`✅ Verified: pgvector version ${result[0].extversion} is installed`);
+      console.log(
+        `✅ Verified: pgvector version ${result[0].extversion} is installed`
+      );
     } else {
       console.log("⚠️  Warning: Could not verify pgvector installation");
     }
@@ -34,7 +36,9 @@ async function enablePgVector() {
     console.error("❌ Failed to enable pgvector:");
     console.error(error);
     console.log("\n💡 If you're using a managed database service:");
-    console.log("   - Vercel Postgres: pgvector should be available by default");
+    console.log(
+      "   - Vercel Postgres: pgvector should be available by default"
+    );
     console.log("   - Supabase: Enable pgvector in Database > Extensions");
     console.log("   - Neon: Enable pgvector in your project settings");
     console.log("   - AWS RDS: Install pgvector extension manually");

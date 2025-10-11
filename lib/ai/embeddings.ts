@@ -1,6 +1,16 @@
-import { embed, embedMany } from "ai";
 import { google } from "@ai-sdk/google";
-import { and, asc, cosineDistance, desc, eq, gte, lte, gt, sql } from "drizzle-orm";
+import { embed, embedMany } from "ai";
+import {
+  and,
+  asc,
+  cosineDistance,
+  desc,
+  eq,
+  gt,
+  gte,
+  lte,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/lib/db";
 import { quranEmbedding, quranVerse } from "@/lib/db/schema";
 
@@ -128,15 +138,14 @@ export async function findRelevantVerses(userQuery: string) {
           contextBefore,
           contextAfter,
         };
-      } else {
-        // Rest return as-is
-        return {
-          ...verse,
-          hasContext: false,
-          contextBefore: [],
-          contextAfter: [],
-        };
       }
+      // Rest return as-is
+      return {
+        ...verse,
+        hasContext: false,
+        contextBefore: [],
+        contextAfter: [],
+      };
     })
   );
 

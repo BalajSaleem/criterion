@@ -12,11 +12,11 @@ import {
   lt,
   type SQL,
 } from "drizzle-orm";
-import type { ArtifactKind } from "@/components/artifact";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
 import type { AppUsage } from "../usage";
 import { generateUUID } from "../utils";
+import { db } from "./index";
 import {
   type Chat,
   chat,
@@ -31,7 +31,6 @@ import {
   vote,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
-import { db } from "./index";
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -281,7 +280,7 @@ export async function saveDocument({
 }: {
   id: string;
   title: string;
-  kind: ArtifactKind;
+  kind: "text" | "code" | "image" | "sheet";
   content: string;
   userId: string;
 }) {

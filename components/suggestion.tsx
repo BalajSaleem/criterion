@@ -6,7 +6,6 @@ import { useWindowSize } from "usehooks-ts";
 
 import type { UISuggestion } from "@/lib/editor/suggestions";
 import { cn } from "@/lib/utils";
-import type { ArtifactKind } from "./artifact";
 import { CrossIcon, MessageIcon } from "./icons";
 import { Button } from "./ui/button";
 
@@ -17,7 +16,7 @@ export const Suggestion = ({
 }: {
   suggestion: UISuggestion;
   onApply: () => void;
-  artifactKind: ArtifactKind;
+  artifactKind: string;
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { width: windowWidth } = useWindowSize();

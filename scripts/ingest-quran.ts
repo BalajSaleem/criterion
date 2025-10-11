@@ -1,21 +1,21 @@
+import fs from "node:fs";
+import path from "node:path";
 import { config } from "dotenv";
-import fs from "fs";
-import path from "path";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { quranVerse, quranEmbedding } from "@/lib/db/schema";
 import { generateEmbeddings } from "@/lib/ai/embeddings";
+import { quranEmbedding, quranVerse } from "@/lib/db/schema";
 
 config({
   path: ".env.local",
 });
 
-interface QuranVerseData {
+type QuranVerseData = {
   surahNumber: number;
   ayahNumber: number;
   textEnglish: string;
   textArabic: string;
-}
+};
 
 // Surah names mapping (1-114)
 const surahNames: Record<number, { english: string; arabic: string }> = {
@@ -137,14 +137,16 @@ const surahNames: Record<number, { english: string; arabic: string }> = {
 
 async function parseQuranFile(
   filePath: string,
-  isArabic: boolean = false
+  _isArabic = false
 ): Promise<Map<string, string>> {
   const content = fs.readFileSync(filePath, "utf-8");
   const lines = content.trim().split("\n");
   const verses = new Map<string, string>(); // key: "surah:ayah", value: text
 
   for (const line of lines) {
-    if (!line.trim()) continue;
+    if (!line.trim()) {
+      continue;
+    }
 
     // Format: 001|001|Text here or surah|ayah|Text here
     const parts = line.split("|");
@@ -157,7 +159,7 @@ async function parseQuranFile(
     const ayahNumber = Number.parseInt(parts[1], 10);
     const text = parts[2].trim();
 
-    if (isNaN(surahNumber) || isNaN(ayahNumber)) {
+    if (Number.isNaN(surahNumber) || Number.isNaN(ayahNumber)) {
       console.warn(`⚠️  Invalid surah/ayah numbers in: ${line}`);
       continue;
     }
@@ -311,10 +313,12 @@ async function ingestQuran() {
   await client.end();
 
   console.log("🎉 Complete! Quran ingestion successful!");
-  console.log(`\n📊 Summary:`);
+  console.log("\n📊 Summary:");
   console.log(`   - Verses processed: ${insertedVerses.length}`);
   console.log(`   - Embeddings created: ${embeddings.length}`);
-  console.log(`   - Surahs covered: ${new Set(verses.map((v) => v.surahNumber)).size}`);
+  console.log(
+    `   - Surahs covered: ${new Set(verses.map((v) => v.surahNumber)).size}`
+  );
 }
 
 ingestQuran()

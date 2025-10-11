@@ -1,7 +1,8 @@
 {
-  "name": "ai-chatbot",
-  "version": "3.1.0",
+  "name": "criterion",
+  "version": "1.0.0",
   "private": true,
+  "description": "Islamic Da'i chatbot with Quran RAG (Retrieval Augmented Generation)",
   "scripts": {
     "dev": "next dev --turbo",
     "build": "tsx lib/db/migrate && next build",

@@ -24,8 +24,12 @@ export const queryQuran = tool({
       };
     }
 
-    console.log(`[queryQuran] Found ${verses.length} verses for question: "${question}"`);
-    console.log(`[queryQuran] Top match: ${verses[0].surahNameEnglish} ${verses[0].surahNumber}:${verses[0].ayahNumber} (${(verses[0].similarity * 100).toFixed(1)}% similarity)`);
+    console.log(
+      `[queryQuran] Found ${verses.length} verses for question: "${question}"`
+    );
+    console.log(
+      `[queryQuran] Top match: ${verses[0].surahNameEnglish} ${verses[0].surahNumber}:${verses[0].ayahNumber} (${(verses[0].similarity * 100).toFixed(1)}% similarity)`
+    );
 
     // Format verses for LLM
     const formattedVerses = verses.map((v, index) => {
@@ -38,21 +42,27 @@ export const queryQuran = tool({
       };
 
       // For top 3, add context
-      if (v.hasContext && (index < 3)) {
-        const contextBeforeText = v.contextBefore.length > 0
-          ? v.contextBefore
-              .map((c) => `[${v.surahNumber}:${c.ayahNumber}] ${c.textEnglish}`)
-              .join("\n")
-          : null;
+      if (v.hasContext && index < 3) {
+        const contextBeforeText =
+          v.contextBefore.length > 0
+            ? v.contextBefore
+                .map(
+                  (c) => `[${v.surahNumber}:${c.ayahNumber}] ${c.textEnglish}`
+                )
+                .join("\n")
+            : null;
 
-        const contextAfterText = v.contextAfter.length > 0
-          ? v.contextAfter
-              .map((c) => `[${v.surahNumber}:${c.ayahNumber}] ${c.textEnglish}`)
-              .join("\n")
-          : null;
+        const contextAfterText =
+          v.contextAfter.length > 0
+            ? v.contextAfter
+                .map(
+                  (c) => `[${v.surahNumber}:${c.ayahNumber}] ${c.textEnglish}`
+                )
+                .join("\n")
+            : null;
 
         const startAyah = v.contextBefore[0]?.ayahNumber || v.ayahNumber;
-        const endAyah = v.contextAfter[v.contextAfter.length - 1]?.ayahNumber || v.ayahNumber;
+        const endAyah = v.contextAfter.at(-1)?.ayahNumber || v.ayahNumber;
 
         return {
           ...baseVerse,
@@ -74,7 +84,7 @@ export const queryQuran = tool({
     return {
       success: true,
       totalVerses: verses.length,
-      topThreeWithContext: formattedVerses.filter(v => v.hasContext).length,
+      topThreeWithContext: formattedVerses.filter((v) => v.hasContext).length,
       verses: formattedVerses,
     };
   },

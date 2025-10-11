@@ -1,7 +1,7 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { config } from "dotenv";
 import postgres from "postgres";
-import { readFileSync } from "fs";
-import { join } from "path";
 
 config({
   path: ".env.local",
@@ -14,12 +14,17 @@ const runCustomMigration = async () => {
 
   const sql = postgres(process.env.POSTGRES_URL, { max: 1 });
 
-  console.log("⏳ Running custom migration: 0010_update_to_3072_dimensions.sql...");
+  console.log(
+    "⏳ Running custom migration: 0010_update_to_3072_dimensions.sql..."
+  );
 
   try {
     // Read the SQL file
     const migrationSQL = readFileSync(
-      join(__dirname, "../lib/db/migrations/0010_update_to_3072_dimensions.sql"),
+      join(
+        __dirname,
+        "../lib/db/migrations/0010_update_to_3072_dimensions.sql"
+      ),
       "utf-8"
     );
 

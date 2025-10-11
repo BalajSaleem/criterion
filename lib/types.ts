@@ -1,11 +1,8 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
-import type { ArtifactKind } from "@/components/artifact";
-import type { createDocument } from "./ai/tools/create-document";
-import type { getWeather } from "./ai/tools/get-weather";
+
 import type { queryQuran } from "./ai/tools/query-quran";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
-import type { updateDocument } from "./ai/tools/update-document";
 import type { Suggestion } from "./db/schema";
 import type { AppUsage } from "./usage";
 
@@ -17,18 +14,12 @@ export const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
-type weatherTool = InferUITool<typeof getWeather>;
-type createDocumentTool = InferUITool<ReturnType<typeof createDocument>>;
-type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
 type queryQuranTool = InferUITool<typeof queryQuran>;
 
 export type ChatTools = {
-  getWeather: weatherTool;
-  createDocument: createDocumentTool;
-  updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
   queryQuran: queryQuranTool;
 };
@@ -42,7 +33,6 @@ export type CustomUIDataTypes = {
   appendMessage: string;
   id: string;
   title: string;
-  kind: ArtifactKind;
   clear: null;
   finish: null;
   usage: AppUsage;
