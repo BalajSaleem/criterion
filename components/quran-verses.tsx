@@ -139,11 +139,17 @@ export const QuranVerses = ({
 };
 
 const VerseCard = ({ verse }: { verse: VerseData }) => {
-  // Determine the appropriate Quran.com link
-  const quranComUrl =
-    verse.hasContext && verse.passageRange
-      ? `https://quran.com/${verse.passageRange.split(" ")[1]?.split("-")[0]?.replace(":", "/")}`
-      : `https://quran.com/${verse.reference.split(" ")[1]?.replace(":", "/")}`;
+  // Parse the verse reference (e.g., "Al-Baqarah 2:255")
+  const verseRef = verse.reference.split(" ")[1]; // "2:255"
+  const [surahNum, ayahNum] = verseRef?.split(":").map(Number) || [0, 0];
+  
+  // Calculate ±10 verse range for Quran.com link
+  const startAyah = Math.max(1, ayahNum - 10);
+  const endAyah = ayahNum + 10;
+  const passageRange = `${surahNum}:${startAyah}-${endAyah}`;
+  
+  // Quran.com URL with the ±10 verse range
+  const quranComUrl = `https://quran.com/${surahNum}/${startAyah}`;
 
   return (
     <div
@@ -185,9 +191,7 @@ const VerseCard = ({ verse }: { verse: VerseData }) => {
           rel="noopener noreferrer"
           target="_blank"
         >
-          {verse.hasContext && verse.passageRange
-            ? `View passage: ${verse.passageRange}`
-            : `View verse: ${verse.reference}`}
+          View verse: ${verse.reference}
         </a>
       </div>
     </div>
