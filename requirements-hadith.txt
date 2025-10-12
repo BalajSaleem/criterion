@@ -1,0 +1,11 @@
+# Hadith Scraper Requirements
+# Install with: pip install -r requirements-hadith.txt
+
+# Core dependencies
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0  # Faster HTML parser
+
+# Optional but recommended
+tqdm>=4.66.0  # Progress bars
+rich>=13.7.0  # Beautiful terminal output
