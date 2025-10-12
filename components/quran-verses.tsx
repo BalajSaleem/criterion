@@ -191,7 +191,7 @@ const VerseCard = ({ verse }: { verse: VerseData }) => {
           rel="noopener noreferrer"
           target="_blank"
         >
-          View verse: ${verse.reference}
+          View verse: {verse.reference}
         </a>
       </div>
     </div>

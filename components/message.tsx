@@ -66,7 +66,7 @@ const PurePreviewMessage = ({
       >
         {message.role === "assistant" && (
           <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-            <div className={cn({ "animate-pulse drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]": isLoading })}>
+            <div className={cn({ "animate-spin": isLoading })}>
               <SparklesIcon size={14} />
             </div>
           </div>
