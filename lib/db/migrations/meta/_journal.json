@@ -64,6 +64,34 @@
       "when": 1760381098214,
       "tag": "0008_neat_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1760391514697,
+      "tag": "0009_moaning_la_nuit",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1760391600000,
+      "tag": "0010_add_search_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1760391890488,
+      "tag": "0011_fine_bill_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1760392562403,
+      "tag": "0012_steady_pepper_potts",
+      "breakpoints": true
     }
   ]
 }

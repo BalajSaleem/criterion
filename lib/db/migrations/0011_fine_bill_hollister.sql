@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "hadith_search_idx" ON "HadithText" USING gin (to_tsvector('english', "englishText"));

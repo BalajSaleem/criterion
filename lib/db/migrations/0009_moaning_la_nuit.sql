@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "idx_quran_surah_ayah" ON "QuranVerse" USING btree ("surahNumber","ayahNumber");

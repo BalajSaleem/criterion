@@ -244,10 +244,10 @@ export async function findRelevantHadiths(
   // Build WHERE conditions
   const conditions = [];
   if (collections && collections.length > 0) {
-    conditions.push(sql`${hadithText.collection} = ANY(${collections})`);
+    conditions.push(sql`${hadithText.collection} = ANY(ARRAY[${sql.join(collections.map(c => sql`${c}`), sql`, `)}])`);
   }
   if (gradeFilter) {
-    conditions.push(sql`${hadithText.grade} = ANY(${gradeFilter})`);
+    conditions.push(sql`${hadithText.grade} = ANY(ARRAY[${sql.join(gradeFilter.map(g => sql`${g}`), sql`, `)}])`);
   }
 
   const whereClause =

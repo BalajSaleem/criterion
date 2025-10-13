@@ -1,4 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
@@ -246,8 +247,8 @@ export const hadithText = pgTable(
     // Indexes for filtering
     collectionIdx: index("hadith_collection_idx").on(table.collection),
     gradeIdx: index("hadith_grade_idx").on(table.grade),
-    // GIN index for full-text search (will be created via migration)
-    // searchIdx: index("hadith_search_idx").using("gin", sql`to_tsvector('english', ${table.englishText})`),
+    // GIN index for full-text search (created via migration, searchVector is a generated column)
+    searchIdx: index("hadith_search_idx").using("gin", sql`"searchVector"`),
   })
 );
 
