@@ -308,6 +308,19 @@ Guidelines:
 
 **Command**: `pnpm test:quran`
 
+### 8. Quran Configuration (`lib/quran-config.ts`)
+
+**Purpose**: Store metadata about Quran structure
+
+**Key Exports**:
+
+- `SURAH_VERSE_COUNTS`: Record of all 114 surahs with their verse counts
+- `getSurahVerseCount(surahNumber)`: Get verse count for a specific surah
+- `clampAyahNumber(surahNumber, ayahNumber)`: Clamp ayah to valid range
+- `isValidAyah(surahNumber, ayahNumber)`: Validate ayah exists
+
+**Usage**: Used in `QuranVerses` component to prevent verse range URLs from overshooting surah boundaries.
+
 ---
 
 ## 💻 Engineering Preferences & Style
@@ -1132,6 +1145,13 @@ console.log(`[Chat] User: ${userId}, Model: ${model}`);
 ---
 
 ## 📝 Change Log
+
+### October 13, 2025
+
+- ✅ Created Quran configuration file (`lib/quran-config.ts`) with surah verse counts
+- ✅ Fixed verse range boundary issue in QuranVerses component
+- ✅ Added `clampAyahNumber()` helper to prevent overshooting surah boundaries
+- ✅ Verse links now correctly respect surah length limits
 
 ### October 11, 2025
 

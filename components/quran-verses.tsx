@@ -11,6 +11,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { clampAyahNumber } from "@/lib/config/quran-config";
 import { cn } from "@/lib/utils";
 
 type VerseData = {
@@ -144,12 +145,13 @@ const VerseCard = ({ verse }: { verse: VerseData }) => {
   const [surahNum, ayahNum] = verseRef?.split(":").map(Number) || [0, 0];
   
   // Calculate ±10 verse range for Quran.com link
-  const startAyah = Math.max(1, ayahNum - 10);
-  const endAyah = ayahNum + 10;
+  // Use clampAyahNumber to ensure we don't exceed surah boundaries
+  const startAyah = Math.max(1, ayahNum - 5);
+  const endAyah = clampAyahNumber(surahNum, ayahNum + 5);
   const passageRange = `${surahNum}:${startAyah}-${endAyah}`;
   
   // Quran.com URL with the ±10 verse range
-  const quranComUrl = `https://quran.com/${surahNum}/${startAyah}`;
+  const quranComUrl = `https://quran.com/${surahNum}/${startAyah}-${endAyah}`;
 
   return (
     <div
@@ -191,7 +193,7 @@ const VerseCard = ({ verse }: { verse: VerseData }) => {
           rel="noopener noreferrer"
           target="_blank"
         >
-          View verse: {verse.reference}
+          View passage {passageRange}
         </a>
       </div>
     </div>
