@@ -8,6 +8,7 @@ import {
   eq,
   gt,
   gte,
+  inArray,
   lte,
   sql,
 } from "drizzle-orm";
@@ -244,14 +245,13 @@ export async function findRelevantHadiths(
   // Build WHERE conditions
   const conditions = [];
   if (collections && collections.length > 0) {
-    conditions.push(sql`${hadithText.collection} = ANY(${collections})`);
+    conditions.push(inArray(hadithText.collection, collections));
   }
-  if (gradeFilter) {
-    conditions.push(sql`${hadithText.grade} = ANY(${gradeFilter})`);
+  if (gradeFilter && gradeFilter.length > 0) {
+    conditions.push(inArray(hadithText.grade, gradeFilter));
   }
 
-  const whereClause =
-    conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : sql`1=1`;
+  const baseCondition = conditions.length > 0 ? and(...conditions) : undefined;
 
   // 1. VECTOR SEARCH (semantic similarity)
   const queryEmbedding = await timeAsync(
@@ -286,7 +286,11 @@ export async function findRelevantHadiths(
         })
         .from(hadithEmbedding)
         .innerJoin(hadithText, eq(hadithEmbedding.hadithId, hadithText.id))
-        .where(sql`${whereClause} AND ${similarity} > 0.3`) // 30% minimum similarity
+        .where(
+          baseCondition
+            ? and(baseCondition, gt(similarity, 0.3))
+            : gt(similarity, 0.3)
+        ) // 30% minimum similarity
         .orderBy(desc(similarity))
         .limit(50), // Get top 50 candidates for merging
     { minSimilarity: 0.3, candidateLimit: 50 }
@@ -316,7 +320,12 @@ export async function findRelevantHadiths(
         })
         .from(hadithText)
         .where(
-          sql`${whereClause} AND "searchVector" @@ plainto_tsquery('english', ${userQuery})`
+          baseCondition
+            ? and(
+                baseCondition,
+                sql`"searchVector" @@ plainto_tsquery('english', ${userQuery})`
+              )
+            : sql`"searchVector" @@ plainto_tsquery('english', ${userQuery})`
         )
         .orderBy(desc(textRank))
         .limit(50), // Get top 50 candidates for merging
