@@ -40,6 +40,11 @@ import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
+import {
+  PerformanceTimer,
+  PerformanceTracker,
+  timeAsync,
+} from "@/lib/monitoring/performance";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -84,6 +89,9 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
+  const requestTimer = new PerformanceTimer("chat:total-request");
+  const tracker = new PerformanceTracker();
+
   let requestBody: PostRequestBody;
 
   try {
@@ -106,7 +114,7 @@ export async function POST(request: Request) {
       selectedVisibilityType: VisibilityType;
     } = requestBody;
 
-    const session = await auth();
+    const session = await timeAsync("chat:auth", () => auth());
 
     if (!session?.user) {
       return new ChatSDKError("unauthorized:chat").toResponse();
@@ -114,35 +122,52 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 24,
-    });
+    const messageCount = await timeAsync(
+      "chat:check-rate-limit",
+      () =>
+        getMessageCountByUserId({
+          id: session.user.id,
+          differenceInHours: 24,
+        }),
+      { userId: session.user.id }
+    );
 
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       return new ChatSDKError("rate_limit:chat").toResponse();
     }
 
-    const chat = await getChatById({ id });
+    const chat = await timeAsync("chat:get-chat", () => getChatById({ id }), {
+      chatId: id,
+    });
 
     if (chat) {
       if (chat.userId !== session.user.id) {
         return new ChatSDKError("forbidden:chat").toResponse();
       }
     } else {
-      const title = await generateTitleFromUserMessage({
-        message,
-      });
+      const title = await timeAsync(
+        "chat:generate-title",
+        () => generateTitleFromUserMessage({ message })
+      );
 
-      await saveChat({
-        id,
-        userId: session.user.id,
-        title,
-        visibility: selectedVisibilityType,
-      });
+      await timeAsync(
+        "chat:save-new-chat",
+        () =>
+          saveChat({
+            id,
+            userId: session.user.id,
+            title,
+            visibility: selectedVisibilityType,
+          }),
+        { chatId: id }
+      );
     }
 
-    const messagesFromDb = await getMessagesByChatId({ id });
+    const messagesFromDb = await timeAsync(
+      "chat:get-messages",
+      () => getMessagesByChatId({ id }),
+      { chatId: id }
+    );
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -154,23 +179,38 @@ export async function POST(request: Request) {
       country,
     };
 
-    await saveMessages({
-      messages: [
-        {
-          chatId: id,
-          id: message.id,
-          role: "user",
-          parts: message.parts,
-          attachments: [],
-          createdAt: new Date(),
-        },
-      ],
-    });
+    await timeAsync(
+      "chat:save-user-message",
+      () =>
+        saveMessages({
+          messages: [
+            {
+              chatId: id,
+              id: message.id,
+              role: "user",
+              parts: message.parts,
+              attachments: [],
+              createdAt: new Date(),
+            },
+          ],
+        }),
+      { chatId: id }
+    );
 
     const streamId = generateUUID();
-    await createStreamId({ streamId, chatId: id });
+    await timeAsync(
+      "chat:create-stream-id",
+      () => createStreamId({ streamId, chatId: id }),
+      { streamId, chatId: id }
+    );
+
+    // Log setup time
+    console.log(
+      `\n🚀 [CHAT INIT] Setup complete in ${requestTimer.getDuration()}ms`
+    );
 
     let finalMergedUsage: AppUsage | undefined;
+    const streamStartTimer = new PerformanceTimer("chat:stream-generation");
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
@@ -240,27 +280,46 @@ export async function POST(request: Request) {
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
-        await saveMessages({
-          messages: messages.map((currentMessage) => ({
-            id: currentMessage.id,
-            role: currentMessage.role,
-            parts: currentMessage.parts,
-            createdAt: new Date(),
-            attachments: [],
-            chatId: id,
-          })),
-        });
+        streamStartTimer.log({ messageCount: messages.length });
+
+        await timeAsync(
+          "chat:save-assistant-messages",
+          () =>
+            saveMessages({
+              messages: messages.map((currentMessage) => ({
+                id: currentMessage.id,
+                role: currentMessage.role,
+                parts: currentMessage.parts,
+                createdAt: new Date(),
+                attachments: [],
+                chatId: id,
+              })),
+            }),
+          { chatId: id, messageCount: messages.length }
+        );
 
         if (finalMergedUsage) {
           try {
-            await updateChatLastContextById({
-              chatId: id,
-              context: finalMergedUsage,
-            });
+            await timeAsync(
+              "chat:update-usage",
+              () =>
+                updateChatLastContextById({
+                  chatId: id,
+                  context: finalMergedUsage!,
+                }),
+              { chatId: id }
+            );
           } catch (err) {
             console.warn("Unable to persist last usage for chat", id, err);
           }
         }
+
+        // Log total request time
+        const totalTime = requestTimer.getDuration();
+        const color = totalTime > 5000 ? "🔴" : totalTime > 2000 ? "🟡" : "🟢";
+        console.log(
+          `\n${color} [CHAT COMPLETE] Total time: ${totalTime}ms (chatId: ${id})\n`
+        );
       },
       onError: () => {
         return "Oops, an error occurred!";
