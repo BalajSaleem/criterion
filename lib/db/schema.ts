@@ -211,3 +211,57 @@ export const quranEmbedding = pgTable(
 );
 
 export type QuranEmbedding = InferSelectModel<typeof quranEmbedding>;
+
+// Hadith text table
+export const hadithText = pgTable(
+  "HadithText",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    collection: varchar("collection", { length: 50 }).notNull(), // 'bukhari', 'muslim', etc.
+    collectionName: varchar("collectionName", { length: 100 }).notNull(), // 'Sahih Bukhari'
+    hadithNumber: integer("hadithNumber").notNull(),
+    reference: varchar("reference", { length: 200 }).notNull(), // 'Sahih al-Bukhari 1'
+    englishText: text("englishText").notNull(),
+    arabicText: text("arabicText").notNull(),
+    bookNumber: integer("bookNumber"),
+    bookName: varchar("bookName", { length: 200 }),
+    chapterNumber: integer("chapterNumber"),
+    chapterName: text("chapterName"),
+    grade: varchar("grade", { length: 50 }), // 'Sahih', 'Hasan', 'Da'if'
+    narratorChain: text("narratorChain"),
+    sourceUrl: varchar("sourceUrl", { length: 500 }),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    // Indexes for filtering
+    collectionIdx: index("hadith_collection_idx").on(table.collection),
+    gradeIdx: index("hadith_grade_idx").on(table.grade),
+    // GIN index for full-text search (will be created via migration)
+    // searchIdx: index("hadith_search_idx").using("gin", sql`to_tsvector('english', ${table.englishText})`),
+  })
+);
+
+export type HadithText = InferSelectModel<typeof hadithText>;
+
+// Hadith embeddings for vector similarity search
+export const hadithEmbedding = pgTable(
+  "HadithEmbedding",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    hadithId: uuid("hadithId")
+      .notNull()
+      .references(() => hadithText.id, { onDelete: "cascade" }),
+    embedding: vector("embedding", { dimensions: 768 }).notNull(), // Gemini text-embedding-004
+    content: text("content").notNull(), // English text for search
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    // HNSW index for fast similarity search
+    embeddingIdx: index("hadith_embedding_hnsw_idx").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    ),
+  })
+);
+
+export type HadithEmbedding = InferSelectModel<typeof hadithEmbedding>;

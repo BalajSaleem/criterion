@@ -20,6 +20,8 @@
     "clear:quran": "npx tsx scripts/clear-quran-data.ts",
     "ingest:quran": "npx tsx scripts/ingest-quran.ts",
     "test:quran": "npx tsx scripts/test-quran-search.ts",
+    "clear:hadith": "npx tsx scripts/clear-hadith-data.ts",
+    "ingest:hadith": "npx tsx scripts/ingest-hadith.ts",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
   },
   "dependencies": {

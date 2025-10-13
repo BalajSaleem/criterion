@@ -12,7 +12,12 @@ import {
   sql,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { quranEmbedding, quranVerse } from "@/lib/db/schema";
+import {
+  hadithEmbedding,
+  hadithText,
+  quranEmbedding,
+  quranVerse,
+} from "@/lib/db/schema";
 
 // Using Gemini text-embedding-004 (768 dimensions)
 // Using RETRIEVAL_QUERY task type for all embeddings
@@ -150,4 +155,163 @@ export async function findRelevantVerses(userQuery: string) {
   );
 
   return enhancedResults;
+}
+
+/**
+ * Options for hadith search
+ */
+type HadithSearchOptions = {
+  collections?: string[]; // Filter by specific collections
+  gradePreference?: "sahih-only" | "sahih-and-hasan" | "all"; // Filter by authenticity
+  limit?: number; // Number of results to return
+};
+
+/**
+ * Reciprocal Rank Fusion (RRF) algorithm
+ * Merges results from multiple ranked lists
+ * Formula: score = sum(1 / (rank + k)) for each list
+ */
+function reciprocalRankFusion<T extends { id: string }>(
+  resultSets: T[][],
+  k = 60
+): T[] {
+  const scoreMap = new Map<string, { score: number; item: T }>();
+
+  // Calculate RRF score for each item across all result sets
+  for (const results of resultSets) {
+    results.forEach((item, rank) => {
+      const score = 1 / (rank + 1 + k); // rank is 0-indexed, so add 1
+      const existing = scoreMap.get(item.id);
+
+      if (existing) {
+        existing.score += score;
+      } else {
+        scoreMap.set(item.id, { score, item });
+      }
+    });
+  }
+
+  // Sort by combined score (highest first)
+  return Array.from(scoreMap.values())
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.item);
+}
+
+/**
+ * Find relevant hadiths using HYBRID SEARCH (vector + keyword)
+ * Combines semantic understanding with exact keyword matching
+ * Returns top N hadiths based on relevance
+ */
+export async function findRelevantHadiths(
+  userQuery: string,
+  options: HadithSearchOptions = {}
+) {
+  const {
+    collections,
+    gradePreference = "sahih-only",
+    limit = 20,
+  } = options;
+
+  // Build grade filter based on preference
+  let gradeFilter: string[] | undefined;
+  if (gradePreference === "sahih-only") {
+    gradeFilter = ["Sahih"];
+  } else if (gradePreference === "sahih-and-hasan") {
+    gradeFilter = ["Sahih", "Hasan"];
+  }
+  // 'all' means no grade filter
+
+  // Build WHERE conditions
+  const conditions = [];
+  if (collections && collections.length > 0) {
+    conditions.push(sql`${hadithText.collection} = ANY(${collections})`);
+  }
+  if (gradeFilter) {
+    conditions.push(sql`${hadithText.grade} = ANY(${gradeFilter})`);
+  }
+
+  const whereClause =
+    conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : sql`1=1`;
+
+  // 1. VECTOR SEARCH (semantic similarity)
+  const queryEmbedding = await generateEmbedding(userQuery);
+  const similarity = sql<number>`1 - (${cosineDistance(
+    hadithEmbedding.embedding,
+    queryEmbedding
+  )})`;
+
+  const vectorResults = await db
+    .select({
+      id: hadithText.id,
+      collection: hadithText.collection,
+      collectionName: hadithText.collectionName,
+      hadithNumber: hadithText.hadithNumber,
+      reference: hadithText.reference,
+      englishText: hadithText.englishText,
+      arabicText: hadithText.arabicText,
+      bookName: hadithText.bookName,
+      chapterName: hadithText.chapterName,
+      grade: hadithText.grade,
+      narratorChain: hadithText.narratorChain,
+      sourceUrl: hadithText.sourceUrl,
+      similarity,
+    })
+    .from(hadithEmbedding)
+    .innerJoin(hadithText, eq(hadithEmbedding.hadithId, hadithText.id))
+    .where(sql`${whereClause} AND ${similarity} > 0.3`) // 30% minimum similarity
+    .orderBy(desc(similarity))
+    .limit(50); // Get top 50 candidates for merging
+
+  // 2. KEYWORD SEARCH (full-text search)
+  const textRank = sql<number>`ts_rank("searchVector", plainto_tsquery('english', ${userQuery}))`;
+
+  const keywordResults = await db
+    .select({
+      id: hadithText.id,
+      collection: hadithText.collection,
+      collectionName: hadithText.collectionName,
+      hadithNumber: hadithText.hadithNumber,
+      reference: hadithText.reference,
+      englishText: hadithText.englishText,
+      arabicText: hadithText.arabicText,
+      bookName: hadithText.bookName,
+      chapterName: hadithText.chapterName,
+      grade: hadithText.grade,
+      narratorChain: hadithText.narratorChain,
+      sourceUrl: hadithText.sourceUrl,
+      similarity: textRank, // Using text rank as "similarity" for consistency
+    })
+    .from(hadithText)
+    .where(
+      sql`${whereClause} AND "searchVector" @@ plainto_tsquery('english', ${userQuery})`
+    )
+    .orderBy(desc(textRank))
+    .limit(50); // Get top 50 candidates for merging
+
+  // 3. MERGE using Reciprocal Rank Fusion
+  const merged = reciprocalRankFusion([vectorResults, keywordResults]);
+
+  // Return top N results with similarity scores from vector search
+  const finalResults = merged.slice(0, limit).map((hadith) => {
+    // Find the original similarity score from vector search
+    const vectorMatch = vectorResults.find((v) => v.id === hadith.id);
+    const keywordMatch = keywordResults.find((k) => k.id === hadith.id);
+
+    return {
+      ...hadith,
+      similarity: vectorMatch?.similarity || keywordMatch?.similarity || 0,
+      matchedBy:
+        vectorMatch && keywordMatch
+          ? "both"
+          : vectorMatch
+            ? "vector"
+            : "keyword",
+    };
+  });
+
+  console.log(
+    `[findRelevantHadiths] Query: "${userQuery}", Vector: ${vectorResults.length}, Keyword: ${keywordResults.length}, Merged: ${finalResults.length}`
+  );
+
+  return finalResults;
 }

@@ -3,15 +3,15 @@ import { z } from "zod";
 import { findRelevantVerses } from "../embeddings";
 
 export const queryQuran = tool({
-  description: `Search the Holy Quran for verses relevant to a question or topic.
-  Returns top 10 relevant verses. The top 3 most relevant verses include 5 verses 
-  before and 5 verses after for full context. Use this tool when the user asks 
+  description: `Search the Holy Quran for verses relevant to a question or topic using semantic answer retrieval search.
+  Returns top 10 relevant verses. The top 3 most relevant verses include some verses 
+  before and some verses after for full context. Use this tool when the user asks 
   about Islamic teachings, guidance, stories, or any spiritual/religious questions.`,
 
   inputSchema: z.object({
     question: z
       .string()
-      .describe("The user's question to search the Quran for"),
+      .describe("The the query to search the Quran for relevant verses. Semantic answer retrieval search is used. Verses that are most relevant to the question are returned."),
   }),
 
   execute: async ({ question }) => {
