@@ -5,7 +5,7 @@ import { findRelevantHadiths } from "../embeddings";
 export const queryHadith = tool({
   description: `Search authentic Hadith (sayings and actions of Prophet Muhammad ﷺ) for Islamic guidance.
   Uses hybrid search (semantic + keyword matching) for best results.
-  Returns top 20 relevant hadiths from major collections (Bukhari, Muslim, Nawawi40, Riyadussalihin).
+  Returns top 3 most relevant hadiths from major collections (Bukhari, Muslim, Nawawi40, Riyadussalihin).
   Defaults to Sahih (authentic) hadiths only - the most reliable narrations.
   Use this tool when users ask about the Prophet's teachings, specific Islamic practices, or hadith references.`,
 

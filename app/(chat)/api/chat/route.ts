@@ -145,22 +145,29 @@ export async function POST(request: Request) {
         return new ChatSDKError("forbidden:chat").toResponse();
       }
     } else {
-      const title = await timeAsync(
-        "chat:generate-title",
-        () => generateTitleFromUserMessage({ message })
-      );
-
+      // Save chat with placeholder title immediately
       await timeAsync(
         "chat:save-new-chat",
         () =>
           saveChat({
             id,
             userId: session.user.id,
-            title,
+            title: "New Chat",
             visibility: selectedVisibilityType,
           }),
         { chatId: id }
       );
+
+      // Generate title asynchronously in the background
+      after(async () => {
+        try {
+          const title = await generateTitleFromUserMessage({ message });
+          const { updateChatTitleById } = await import("@/lib/db/queries");
+          await updateChatTitleById({ chatId: id, title });
+        } catch (err) {
+          console.warn("Background title generation failed for chat", id, err);
+        }
+      });
     }
 
     const messagesFromDb = await timeAsync(
@@ -218,12 +225,11 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt(requestHints),
           messages: convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(4),
+          stopWhen: stepCountIs(2),
           experimental_activeTools:
             selectedChatModel === "chat-model-reasoning"
               ? []
               : ["requestSuggestions", "queryQuran", "queryHadith"],
-          experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
             requestSuggestions: requestSuggestions({
               session,

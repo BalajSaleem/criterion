@@ -8,7 +8,6 @@ import {
   eq,
   gt,
   gte,
-  inArray,
   lte,
   sql,
 } from "drizzle-orm";
@@ -126,10 +125,10 @@ export async function findRelevantVerses(userQuery: string) {
         })
         .from(quranEmbedding)
         .innerJoin(quranVerse, eq(quranEmbedding.verseId, quranVerse.id))
-        .where(gt(similarity, 0.3)) // Minimum 30% similarity (lowered from 50%)
+        .where(gt(similarity, 0.3)) // Minimum 30% similarity
         .orderBy(desc(similarity))
-        .limit(10), // Top 10 results (increased from 5)
-    { minSimilarity: 0.3, limit: 10 }
+        .limit(7), // Top 7 results (optimized from 10)
+    { minSimilarity: 0.3, limit: 7 }
   );
 
   // 4. For the top 3 results, fetch ±5 context verses
@@ -230,7 +229,7 @@ export async function findRelevantHadiths(
   const {
     collections,
     gradePreference = "sahih-only",
-    limit = 20,
+    limit = 3,
   } = options;
 
   // Build grade filter based on preference
@@ -245,13 +244,14 @@ export async function findRelevantHadiths(
   // Build WHERE conditions
   const conditions = [];
   if (collections && collections.length > 0) {
-    conditions.push(inArray(hadithText.collection, collections));
+    conditions.push(sql`${hadithText.collection} = ANY(${collections})`);
   }
-  if (gradeFilter && gradeFilter.length > 0) {
-    conditions.push(inArray(hadithText.grade, gradeFilter));
+  if (gradeFilter) {
+    conditions.push(sql`${hadithText.grade} = ANY(${gradeFilter})`);
   }
 
-  const baseCondition = conditions.length > 0 ? and(...conditions) : undefined;
+  const whereClause =
+    conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : sql`1=1`;
 
   // 1. VECTOR SEARCH (semantic similarity)
   const queryEmbedding = await timeAsync(
@@ -286,11 +286,7 @@ export async function findRelevantHadiths(
         })
         .from(hadithEmbedding)
         .innerJoin(hadithText, eq(hadithEmbedding.hadithId, hadithText.id))
-        .where(
-          baseCondition
-            ? and(baseCondition, gt(similarity, 0.3))
-            : gt(similarity, 0.3)
-        ) // 30% minimum similarity
+        .where(sql`${whereClause} AND ${similarity} > 0.3`) // 30% minimum similarity
         .orderBy(desc(similarity))
         .limit(50), // Get top 50 candidates for merging
     { minSimilarity: 0.3, candidateLimit: 50 }
@@ -320,12 +316,7 @@ export async function findRelevantHadiths(
         })
         .from(hadithText)
         .where(
-          baseCondition
-            ? and(
-                baseCondition,
-                sql`"searchVector" @@ plainto_tsquery('english', ${userQuery})`
-              )
-            : sql`"searchVector" @@ plainto_tsquery('english', ${userQuery})`
+          sql`${whereClause} AND "searchVector" @@ plainto_tsquery('english', ${userQuery})`
         )
         .orderBy(desc(textRank))
         .limit(50), // Get top 50 candidates for merging

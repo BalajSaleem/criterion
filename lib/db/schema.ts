@@ -176,16 +176,26 @@ export const stream = pgTable(
 export type Stream = InferSelectModel<typeof stream>;
 
 // Quran verses table
-export const quranVerse = pgTable("QuranVerse", {
-  id: uuid("id").primaryKey().notNull().defaultRandom(),
-  surahNumber: integer("surahNumber").notNull(),
-  ayahNumber: integer("ayahNumber").notNull(),
-  surahNameEnglish: varchar("surahNameEnglish", { length: 100 }).notNull(),
-  surahNameArabic: varchar("surahNameArabic", { length: 100 }).notNull(),
-  textArabic: text("textArabic").notNull(),
-  textEnglish: text("textEnglish").notNull(),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-});
+export const quranVerse = pgTable(
+  "QuranVerse",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    surahNumber: integer("surahNumber").notNull(),
+    ayahNumber: integer("ayahNumber").notNull(),
+    surahNameEnglish: varchar("surahNameEnglish", { length: 100 }).notNull(),
+    surahNameArabic: varchar("surahNameArabic", { length: 100 }).notNull(),
+    textArabic: text("textArabic").notNull(),
+    textEnglish: text("textEnglish").notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    // Composite index for fast context queries (±N verses)
+    surahAyahIdx: index("idx_quran_surah_ayah").on(
+      table.surahNumber,
+      table.ayahNumber
+    ),
+  })
+);
 
 export type QuranVerse = InferSelectModel<typeof quranVerse>;
 
