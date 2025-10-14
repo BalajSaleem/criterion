@@ -67,7 +67,7 @@ export const HadithNarrations = ({
 
   if (!output.success) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+      <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200">
         <p className="text-sm">
           {output.message || "No relevant hadiths found."}
         </p>
@@ -77,7 +77,7 @@ export const HadithNarrations = ({
 
   if (!output.hadiths || output.hadiths.length === 0) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+      <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200">
         <p className="text-sm">No relevant hadiths found.</p>
       </div>
     );
@@ -134,13 +134,13 @@ const HadithCard = ({ hadith }: { hadith: HadithData }) => {
   return (
     <div
       className={cn(
-        "flex w-full flex-col overflow-hidden rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 p-3 transition-all sm:p-4 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/10"
+        "flex w-full flex-col overflow-hidden rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50/50 to-orange-50/30 p-3 transition-all sm:p-4 dark:border-sky-800/50 dark:from-sky-950/20 dark:to-orange-950/10"
       )}
     >
       {/* Header with collection, reference, and grade */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 items-center gap-2 font-semibold text-sm">
-          <SparklesIcon className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <SparklesIcon className="size-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
           <span className="truncate">{hadith.collection}</span>
         </div>
         <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", gradeColor)}>
@@ -170,7 +170,7 @@ const HadithCard = ({ hadith }: { hadith: HadithData }) => {
 
       {/* Metadata: Book and Chapter */}
       {(hadith.book !== "Not specified" || hadith.chapter !== "Not specified") && (
-        <div className="mb-3 space-y-1 rounded-md border border-amber-200/50 bg-amber-50/30 p-2 text-sm dark:border-amber-800/30 dark:bg-amber-950/10">
+        <div className="mb-3 space-y-1 rounded-md border border-sky-200/50 bg-sky-50/30 p-2 text-sm dark:border-sky-800/30 dark:bg-sky-950/10">
           {hadith.book !== "Not specified" && (
             <div className="text-muted-foreground">
               <span className="font-medium">Book:</span> {hadith.book}
@@ -188,7 +188,7 @@ const HadithCard = ({ hadith }: { hadith: HadithData }) => {
       {hadith.narrator && hadith.narrator !== "Not specified" && (
         <div className="mb-3">
           <button
-            className="flex w-full items-center justify-between rounded-md border border-amber-200/50 bg-amber-50/30 p-2 text-left text-sm transition-colors hover:bg-amber-100/40 dark:border-amber-800/30 dark:bg-amber-950/10 dark:hover:bg-amber-900/20"
+            className="flex w-full items-center justify-between rounded-md border border-sky-200/50 bg-sky-50/30 p-2 text-left text-sm transition-colors hover:bg-sky-100/40 dark:border-sky-800/30 dark:bg-sky-950/10 dark:hover:bg-sky-900/20"
             onClick={() => setShowNarrator(!showNarrator)}
             type="button"
           >
@@ -200,7 +200,7 @@ const HadithCard = ({ hadith }: { hadith: HadithData }) => {
             </span>
           </button>
           {showNarrator && (
-            <div className="mt-2 rounded-md border border-amber-200/50 bg-amber-50/30 p-2 text-muted-foreground text-sm dark:border-amber-800/30 dark:bg-amber-950/10">
+            <div className="mt-2 rounded-md border border-sky-200/50 bg-sky-50/30 p-2 text-muted-foreground text-sm dark:border-sky-800/30 dark:bg-sky-950/10">
               {hadith.narrator}
             </div>
           )}
@@ -209,10 +209,10 @@ const HadithCard = ({ hadith }: { hadith: HadithData }) => {
 
       {/* Source link */}
       {hadith.sourceUrl && (
-        <div className="mt-auto flex items-center justify-center gap-2 rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2 dark:border-amber-800/50 dark:bg-amber-950/20">
-          <ScrollTextIcon className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="mt-auto flex items-center justify-center gap-2 rounded-md border border-sky-200 bg-sky-50/50 px-3 py-2 dark:border-sky-800/50 dark:bg-sky-950/20">
+          <ScrollTextIcon className="size-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
           <a
-            className="text-amber-700 text-sm hover:underline dark:text-amber-300"
+            className="text-sky-700 text-sm hover:underline dark:text-sky-300"
             href={hadith.sourceUrl}
             rel="noopener noreferrer"
             target="_blank"
