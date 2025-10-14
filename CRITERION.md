@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-Help people understand Islam through authentic sources using natural language queries. Guide people curious about Islam to the true religion. This is a t
+Help people understand Islam through authentic sources using natural language queries. This project uses a chat interface to answer the user's queries about islam. It utilises quran and ahadith to provide authentic, grounded answers. The goal is to guide user's to islam with wisdom, compassion, empathy and truth.
 
 **What makes us different:**
 
