@@ -22,6 +22,7 @@ import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { QuranVerses } from "./quran-verses";
+import { HadithNarrations } from "./hadith-narrations";
 
 const PurePreviewMessage = ({
   chatId,
@@ -181,6 +182,31 @@ const PurePreviewMessage = ({
                         output={
                           !part.errorText && part.output ? (
                             <QuranVerses output={part.output as any} />
+                          ) : null
+                        }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === "tool-queryHadith") {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={false} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-queryHadith" />
+                  <ToolContent>
+                    {(state === "input-available" ||
+                      state === "output-available") &&
+                      part.input && <ToolInput input={part.input} />}
+                    {state === "output-available" && (
+                      <ToolOutput
+                        errorText={part.errorText}
+                        output={
+                          !part.errorText && part.output ? (
+                            <HadithNarrations output={part.output as any} />
                           ) : null
                         }
                       />

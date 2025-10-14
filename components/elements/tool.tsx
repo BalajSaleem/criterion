@@ -70,6 +70,7 @@ const getToolDisplayName = (type: ToolUIPart["type"]) => {
     "tool-updateDocument": "Update Document",
     "tool-requestSuggestions": "Request Suggestions",
     "tool-queryQuran": "Search Quran",
+    "tool-queryHadith": "Search Hadith",
   };
 
   return displayNames[type] || type;
