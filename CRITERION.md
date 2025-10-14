@@ -10,7 +10,7 @@ Help people understand Islam through authentic sources using natural language qu
 
 **What makes us different:**
 
-- **Dual-source RAG**: 6,236 Quran verses + 12,416 Hadiths with hybrid search
+- **Dual-source tool based rag RAG**: 6,236 Quran verses + 12,416 Hadiths with hybrid (keyword + vector) search
 - **Contextual**: Top Quran results include ±2 surrounding verses
 - **Authentic**: Defaults to Sahih (most reliable) hadiths
 - **Accurate**: Every response cites real sources with hyperlinks
@@ -21,42 +21,82 @@ Help people understand Islam through authentic sources using natural language qu
 
 ```
 User asks question
-  → LLM decides: queryQuran or queryHadith
-  → Search runs (vector or hybrid)
-  → LLM generates answer with citations
-  → Stream to user
+  → Vercel AI SDK streamText with tools
+  → LLM autonomously calls queryQuran or queryHadith
+  → Hybrid RAG search (vector + keyword)
+  → LLM generates grounded answer
+  → Stream response + citations to UI
 ```
 
-**Quran:** Vector search → top 10 → add ±2 context for top 3  
-**Hadith:** Vector + Keyword search → merge with RRF → top 20
+**Architecture:**
+
+- **Vercel AI SDK**: `streamText` with tool calling, multi-step reasoning (`stepCountIs(2)`)
+- **RAG Pattern**: Tool-based retrieval → LLM grounds response in retrieved context
+- **Streaming**: Real-time SSE via `createUIMessageStream` + `JsonToSseTransformStream`
+- **Autonomy**: LLM decides when/which tools to call based on system prompt
+
+**Search Flow:**
+
+- **Quran**: Vector search → top 7 → add ±2 context verses for top 3
+- **Hadith**: Vector + Keyword → RRF merge → top 3 (with grade filtering)
 
 ---
 
 ## 3. Tech Stack
 
-- Next.js 15, React 19, TypeScript
-- XAI Grok (LLM), Gemini text-embedding-004 (768-dim embeddings)
-- PostgreSQL + pgvector (HNSW index), Drizzle ORM
-- Vercel AI SDK for streaming
+- **Framework**: Next.js 15, React 19, TypeScript
+- **AI SDK**: Vercel AI SDK (streamText, tool calling, multi-step agents)
+- **LLM**: GPT5 Mini (primary), GPT4 Turbo (reasoning)
+- **Embeddings**: Gemini text-embedding-004 (768-dim, RETRIEVAL_QUERY task type)
+- **Database**: PostgreSQL + pgvector (HNSW index), Drizzle ORM
+- **Streaming**: Server-Sent Events (SSE) with `JsonToSseTransformStream`
 
 ---
 
-## 4. Core Files
+## 4. Core Files & Architecture
+
+### API & Streaming Pipeline
 
 ```
-lib/ai/embeddings.ts          # RAG logic (vector/hybrid search)
-lib/ai/tools/query-*.ts       # LLM tools for Quran/Hadith search
-lib/ai/prompts.ts             # Da'i personality & behavior
-app/(chat)/api/chat/route.ts  # Main API endpoint
-lib/db/schema.ts              # Database schema
-scripts/ingest-*.ts           # Data ingestion
+app/(chat)/api/chat/route.ts     # Main chat endpoint (POST/DELETE)
+  └─ streamText()                # Vercel AI SDK streaming
+      ├─ Tools: queryQuran, queryHadith, requestSuggestions
+      ├─ Multi-step: stepCountIs(2)
+      └─ Output: JsonToSseTransformStream → SSE to client
 ```
 
-**Key Functions:**
+### RAG Implementation
 
-- `findRelevantVerses(query)` - Quran vector search with context
-- `findRelevantHadiths(query, opts)` - Hadith hybrid search (vector + keyword)
-- `reciprocalRankFusion()` - Merge search results optimally
+```
+lib/ai/embeddings.ts             # Core RAG logic
+  ├─ generateEmbedding()         # Gemini RETRIEVAL_QUERY embeddings
+  ├─ findRelevantVerses()        # Quran vector search + context
+  ├─ findRelevantHadiths()       # Hybrid search (vector + keyword)
+  └─ reciprocalRankFusion()      # RRF merge algorithm
+
+lib/ai/tools/
+  ├─ query-quran.ts              # Quran tool definition (Zod schema)
+  └─ query-hadith.ts             # Hadith tool definition (with grade filter)
+```
+
+### Key Functions
+
+**Embedding & Search:**
+
+- `generateEmbedding(text)` → Creates 768-dim vector (Gemini RETRIEVAL_QUERY)
+- `findRelevantVerses(query)` → Vector search + ±2 context verses
+- `findRelevantHadiths(query, opts)` → Hybrid search with RRF merge
+- `reciprocalRankFusion(resultSets, k=60)` → Merges ranked lists
+
+**Tool Definitions:**
+
+- `queryQuran` → Top 7 verses, top 3 with ±2 context (400-600 tokens)
+- `queryHadith` → Top 3 hadiths, with grade/collection filters
+
+### UI Components
+
+- `QuranVerses` - Displays verses with ±2 context, links to Quran.com
+- `HadithNarrations` - Displays hadiths with grade badges, collapsible narrator chains, links to Sunnah.com
 
 ---
 
@@ -93,15 +133,46 @@ pnpm ingest:hadith    # Load Hadith + embeddings
 
 ## 7. Configuration
 
+### Vercel AI SDK Settings
+
+```typescript
+// app/(chat)/api/chat/route.ts
+streamText({
+  model: myProvider.languageModel(selectedChatModel),
+  system: systemPrompt(requestHints),
+  messages: convertToModelMessages(uiMessages),
+  stopWhen: stepCountIs(2), // Multi-step: max 2 tool calls
+  experimental_activeTools: [
+    // Available tools (disabled for reasoning model)
+    "requestSuggestions",
+    "queryQuran",
+    "queryHadith",
+  ],
+  tools: { queryQuran, queryHadith, requestSuggestions },
+});
+```
+
+### RAG Configuration
+
 ```typescript
 // lib/ai/embeddings.ts
-const context_window = 2; // ±2 verses for Quran context
-const embeddingModel = "text-embedding-004"; // 768 dims
-const similarityThreshold = 0.3; // 30% minimum similarity
+const embeddingModel = google.textEmbedding("text-embedding-004");
+const context_window = 2;              // ±2 verses for Quran context
+const similarityThreshold = 0.3;       // 30% minimum similarity
 
-// Quran: top 10 results, top 3 with context
-// Hadith: top 20 results (hybrid search)
+// Task type: RETRIEVAL_QUERY (optimized for semantic search)
+providerOptions: {
+  google: {
+    taskType: "RETRIEVAL_QUERY",
+  }
+}
+
+// Search limits:
+// - Quran: top 7 results, top 3 with ±2 context (~400-600 tokens)
+// - Hadith: top 10 candidates each (vector + keyword), RRF merge → top 3
 ```
+
+### Environment Variables
 
 ```bash
 # .env.local
@@ -112,16 +183,95 @@ GOOGLE_GENERATIVE_AI_API_KEY=...
 
 ---
 
-## 8. Key Decisions
+## 8. Vercel AI SDK & RAG Agent Pattern
+
+### Core Concepts
+
+**Tool-Based RAG Architecture:**
+
+- LLM acts as an autonomous agent that decides when to retrieve information
+- Tools (`queryQuran`, `queryHadith`) expose retrieval functions to the model
+- Model calls tools based on user query, not hardcoded retrieval logic
+- Retrieved context is automatically injected into the conversation
+
+**Multi-Step Reasoning:**
+
+```typescript
+stopWhen: stepCountIs(2); // Allows: Query → Tool Call → Response
+```
+
+- Step 1: Model analyzes query, calls appropriate tool(s)
+- Step 2: Model receives tool results, generates final answer
+- Prevents infinite loops while enabling follow-up reasoning
+
+**Streaming Protocol:**
+
+```typescript
+createUIMessageStream({
+  execute: ({ writer }) => {
+    const result = streamText({ ... });
+    writer.merge(result.toUIMessageStream());
+  }
+})
+.pipeThrough(new JsonToSseTransformStream())
+```
+
+- Real-time Server-Sent Events (SSE) for token-by-token streaming
+- `createUIMessageStream` handles message state + tool execution
+- `JsonToSseTransformStream` converts to browser-compatible SSE format
+
+### Tool Definition Pattern
+
+**Why Tools Over Direct RAG?**
+
+- ✅ Model autonomy: LLM decides if retrieval is needed
+- ✅ Selective retrieval: Only searches when relevant
+- ✅ Multi-source: Can call multiple tools (Quran + Hadith)
+- ✅ Conversation-aware: Maintains context across tool calls
+
+### Hybrid RAG Search Strategy
+
+**Vector Search (Semantic):**
+
+```typescript
+const similarity = sql`1 - (${cosineDistance(embedding, queryEmbedding)})`;
+// Returns: verses semantically similar to query
+```
+
+- Captures meaning, intent, conceptual matches
+- Works for paraphrased questions
+- Example: "afterlife" matches "Day of Judgment"
+
+**Keyword Search (Lexical):**
+
+```typescript
+const textRank = sql`ts_rank(searchVector, plainto_tsquery('english', ${query}))`;
+// Returns: hadiths with exact keyword matches
+```
+
+- Captures specific terms, names, phrases
+- Critical for proper nouns (e.g., "Abu Bakr", "Laylat al-Qadr")
+- Complements vector search for Arabic transliterations
+
+**Reciprocal Rank Fusion (RRF):**
+
+```typescript
+score = sum(1 / (rank + k)) across all result lists
+```
+
+- Merges vector + keyword results without score normalization issues
+- `k=60` balances top-ranked vs lower-ranked items
+- **Result**: Best of both semantic + lexical worlds
+
+## 9. Key Decisions
 
 **Why ±2 context verses?** Balance between context quality and token usage (600 tokens vs 1,500)  
 **Why hybrid search for Hadith?** Arabic terms and proper names need exact matching (+49% improvement)  
-**Why default Sahih-only?** Islamic scholarship prioritizes authenticity  
-**Why Gemini embeddings?** Better quality than OpenAI for retrieval, free tier, 768 dims fits HNSW
+**Why default Sahih-only?** Islamic scholarship prioritizes authenticity
 
 ---
 
-## 9. Performance
+## 10. Performance
 
 | Operation              | Time      |
 | ---------------------- | --------- |
@@ -131,7 +281,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=...
 
 ---
 
-## 10. Limitations
+## 11. Limitations
 
 - English-only queries (Arabic embeddings not yet supported)
 - No Tafsir (commentary) yet
@@ -139,7 +289,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=...
 
 ---
 
-## 11. Next Steps
+## 12. Next Steps
 
 **High Priority:**
 
@@ -153,7 +303,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=...
 
 ---
 
-## 12. Quick Start
+## 13. Quick Start
 
 ```bash
 # 1. Setup
@@ -173,7 +323,7 @@ pnpm dev  # localhost:3000
 
 ---
 
-## 13. Debugging
+## 14. Debugging
 
 **No results:** Lower similarity threshold from 0.3 to 0.2  
 **Tool not called:** Check system prompt includes "ALWAYS use queryQuran/queryHadith"  
