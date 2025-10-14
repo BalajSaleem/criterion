@@ -219,6 +219,10 @@ const PurePreviewMessage = ({
             return null;
           })}
 
+          {message.role === "assistant" && isLoading && !message.parts?.some((p) => p.type === "text" && p.text?.trim()) && (
+            <LoadingMessage />
+          )}
+
           {!isReadonly && (
             <MessageActions
               chatId={chatId}
@@ -258,8 +262,7 @@ export const PreviewMessage = memo(
   }
 );
 
-export const ThinkingMessage = () => {
-  const role = "assistant";
+const LoadingMessage = () => {
   const [messageIndex, setMessageIndex] = useState(0);
 
   const loadingMessages = [
@@ -279,6 +282,18 @@ export const ThinkingMessage = () => {
   }, []);
 
   return (
+    <div className="p-0 text-sm">
+      <LoadingText key={messageIndex}>
+        {loadingMessages[messageIndex]}
+      </LoadingText>
+    </div>
+  );
+};
+
+export const ThinkingMessage = () => {
+  const role = "assistant";
+
+  return (
     <motion.div
       animate={{ opacity: 1 }}
       className="group/message w-full"
@@ -294,11 +309,7 @@ export const ThinkingMessage = () => {
         </div>
 
         <div className="flex w-full flex-col gap-2 md:gap-4">
-          <div className="p-0 text-sm">
-            <LoadingText key={messageIndex}>
-              {loadingMessages[messageIndex]}
-            </LoadingText>
-          </div>
+          <LoadingMessage />
         </div>
       </div>
     </motion.div>
