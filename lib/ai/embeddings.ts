@@ -185,39 +185,7 @@ type HadithSearchOptions = {
 };
 
 /**
- * Reciprocal Rank Fusion (RRF) algorithm
- * Merges results from multiple ranked lists
- * Formula: score = sum(1 / (rank + k)) for each list
- */
-function reciprocalRankFusion<T extends { id: string }>(
-  resultSets: T[][],
-  k = 60
-): T[] {
-  const scoreMap = new Map<string, { score: number; item: T }>();
-
-  // Calculate RRF score for each item across all result sets
-  for (const results of resultSets) {
-    results.forEach((item, rank) => {
-      const score = 1 / (rank + 1 + k); // rank is 0-indexed, so add 1
-      const existing = scoreMap.get(item.id);
-
-      if (existing) {
-        existing.score += score;
-      } else {
-        scoreMap.set(item.id, { score, item });
-      }
-    });
-  }
-
-  // Sort by combined score (highest first)
-  return Array.from(scoreMap.values())
-    .sort((a, b) => b.score - a.score)
-    .map((entry) => entry.item);
-}
-
-/**
- * Find relevant hadiths using HYBRID SEARCH (vector + keyword)
- * Combines semantic understanding with exact keyword matching
+ * Find relevant hadiths using vector search (semantic similarity)
  * Returns top N hadiths based on relevance
  */
 export async function findRelevantHadiths(
@@ -253,7 +221,7 @@ export async function findRelevantHadiths(
   const whereClause =
     conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : sql`1=1`;
 
-  // 1. VECTOR SEARCH (semantic similarity)
+  // Vector search with semantic similarity
   const queryEmbedding = await timeAsync(
     "hadith:generate-embedding",
     () => generateEmbedding(userQuery),
@@ -265,7 +233,7 @@ export async function findRelevantHadiths(
     queryEmbedding
   )})`;
 
-  const vectorResults = await timeAsync(
+  const results = await timeAsync(
     "hadith:vector-search",
     () =>
       db
@@ -288,73 +256,15 @@ export async function findRelevantHadiths(
         .innerJoin(hadithText, eq(hadithEmbedding.hadithId, hadithText.id))
         .where(sql`${whereClause} AND ${similarity} > 0.3`) // 30% minimum similarity
         .orderBy(desc(similarity))
-        .limit(50), // Get top 50 candidates for merging
-    { minSimilarity: 0.3, candidateLimit: 50 }
+        .limit(limit),
+    { minSimilarity: 0.3, limit }
   );
-
-  // 2. KEYWORD SEARCH (full-text search)
-  const textRank = sql<number>`ts_rank("searchVector", plainto_tsquery('english', ${userQuery}))`;
-
-  const keywordResults = await timeAsync(
-    "hadith:keyword-search",
-    () =>
-      db
-        .select({
-          id: hadithText.id,
-          collection: hadithText.collection,
-          collectionName: hadithText.collectionName,
-          hadithNumber: hadithText.hadithNumber,
-          reference: hadithText.reference,
-          englishText: hadithText.englishText,
-          arabicText: hadithText.arabicText,
-          bookName: hadithText.bookName,
-          chapterName: hadithText.chapterName,
-          grade: hadithText.grade,
-          narratorChain: hadithText.narratorChain,
-          sourceUrl: hadithText.sourceUrl,
-          similarity: textRank, // Using text rank as "similarity" for consistency
-        })
-        .from(hadithText)
-        .where(
-          sql`${whereClause} AND "searchVector" @@ plainto_tsquery('english', ${userQuery})`
-        )
-        .orderBy(desc(textRank))
-        .limit(50), // Get top 50 candidates for merging
-    { candidateLimit: 50 }
-  );
-
-  // 3. MERGE using Reciprocal Rank Fusion
-  const merged = reciprocalRankFusion([vectorResults, keywordResults]);
-
-  // Return top N results with similarity scores from vector search
-  const finalResults = merged.slice(0, limit).map((hadith) => {
-    // Find the original similarity score from vector search
-    const vectorMatch = vectorResults.find((v) => v.id === hadith.id);
-    const keywordMatch = keywordResults.find((k) => k.id === hadith.id);
-
-    return {
-      ...hadith,
-      similarity: vectorMatch?.similarity || keywordMatch?.similarity || 0,
-      matchedBy:
-        vectorMatch && keywordMatch
-          ? "both"
-          : vectorMatch
-            ? "vector"
-            : "keyword",
-    };
-  });
 
   timer.log({
-    vectorResults: vectorResults.length,
-    keywordResults: keywordResults.length,
-    mergedResults: finalResults.length,
+    resultsFound: results.length,
     collections: collections?.join(",") || "all",
     gradePreference,
   });
 
-  console.log(
-    `[findRelevantHadiths] Query: "${userQuery}", Vector: ${vectorResults.length}, Keyword: ${keywordResults.length}, Merged: ${finalResults.length}`
-  );
-
-  return finalResults;
+  return results;
 }

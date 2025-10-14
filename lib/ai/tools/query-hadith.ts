@@ -4,7 +4,7 @@ import { findRelevantHadiths } from "../embeddings";
 
 export const queryHadith = tool({
   description: `Search authentic Hadith (sayings and actions of Prophet Muhammad ﷺ) for Islamic guidance.
-  Uses hybrid search (semantic + keyword matching) for best results.
+  Uses semantic vector search to find the most relevant hadiths.
   Returns top 3 most relevant hadiths from major collections (Bukhari, Muslim, Nawawi40, Riyadussalihin).
   Defaults to Sahih (authentic) hadiths only - the most reliable narrations.
   Use this tool when users ask about the Prophet's teachings, specific Islamic practices, or hadith references.`,
@@ -47,7 +47,7 @@ export const queryHadith = tool({
       `[queryHadith] Found ${hadiths.length} hadiths for question: "${question}"`
     );
     console.log(
-      `[queryHadith] Top match: ${hadiths[0].reference} (${(hadiths[0].similarity * 100).toFixed(1)}% similarity, matched by ${hadiths[0].matchedBy})`
+      `[queryHadith] Top match: ${hadiths[0].reference} (${(hadiths[0].similarity * 100).toFixed(1)}% similarity)`
     );
 
     // Format hadiths for LLM
@@ -66,7 +66,6 @@ export const queryHadith = tool({
       chapter: h.chapterName || "Not specified",
 
       relevance: `${(h.similarity * 100).toFixed(1)}%`,
-      matchType: h.matchedBy, // 'vector', 'keyword', or 'both'
 
       sourceUrl: h.sourceUrl || "",
     }));
