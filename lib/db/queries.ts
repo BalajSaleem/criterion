@@ -571,3 +571,27 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     );
   }
 }
+
+// =======================
+// Quran Queries
+// =======================
+
+export async function getVersesBySurah({ surahNumber }: { surahNumber: number }) {
+  try {
+    const { quranVerse } = await import("./schema");
+    const verses = await db
+      .select()
+      .from(quranVerse)
+      .where(eq(quranVerse.surahNumber, surahNumber))
+      .orderBy(asc(quranVerse.ayahNumber))
+      .execute();
+    
+    return verses;
+  } catch (error) {
+    console.error("Failed to get verses by surah:", error);
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get verses by surah"
+    );
+  }
+}
