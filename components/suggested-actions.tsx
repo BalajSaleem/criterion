@@ -16,16 +16,14 @@ type SuggestedActionsProps = {
 function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
   const suggestedActions = [
     "What is Islam and what do Muslims believe?",
-    "Who is God in Islam?",
-    "Who was Abraham?",
-    "Tell me about the Prophet Muhammad (peace be upon him).",
-    "What are the Five Pillars of Islam?",
-    "What does Islam think about Jesus?"
+    "Who is Allah?",
+    "What does Islam think about Jesus?",
+    "Tell me about the Prophet Muhammad (pbuh).",
   ];
 
   return (
     <div
-      className="grid w-full gap-2 sm:grid-cols-2"
+      className="grid w-full gap-1.5 sm:gap-2 sm:grid-cols-2"
       data-testid="suggested-actions"
     >
       {suggestedActions.map((suggestedAction, index) => (
@@ -37,7 +35,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
           transition={{ delay: 0.05 * index }}
         >
           <Suggestion
-            className="h-auto w-full whitespace-normal p-3 text-left"
+            className="h-auto w-full whitespace-normal p-2 text-left text-sm sm:p-3 sm:text-base"
             onClick={(suggestion) => {
               window.history.replaceState({}, "", `/chat/${chatId}`);
               sendMessage({
