@@ -16,10 +16,11 @@ type SuggestedActionsProps = {
 function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
   const suggestedActions = [
     "What is Islam and what do Muslims believe?",
-    "How does the Quran guide daily life?",
+    "Who is God in Islam?",
+    "Who was Abraham?",
+    "Tell me about the Prophet Muhammad (peace be upon him).",
     "What are the Five Pillars of Islam?",
-    "What does Islam think about Jesus?",
-    "How can I start learning about becoming a Muslim?",
+    "What does Islam think about Jesus?"
   ];
 
   return (

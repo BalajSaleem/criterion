@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SURAH_METADATA } from '@/lib/quran-metadata';
 import { createBreadcrumbSchema } from '@/lib/seo/schema';
+import { CriterionBranding } from '@/components/criterion-branding';
 
 export const metadata: Metadata = {
   title: 'Quran - Browse All 114 Surahs',
@@ -38,6 +39,24 @@ export default function QuranPage() {
       />
       
       <div className="min-h-screen bg-background">
+        {/* Navigation Header */}
+        <header className="border-b">
+          <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+            <CriterionBranding />
+            <nav className="flex gap-4 md:gap-6 text-sm">
+              <Link href="/search" className="hover:underline">
+                Search
+              </Link>
+              <Link href="/about" className="hover:underline">
+                About
+              </Link>
+              <Link href="/faq" className="hover:underline">
+                FAQ
+              </Link>
+            </nav>
+          </div>
+        </header>
+
         <div className="mx-auto max-w-6xl px-4 py-8">
           {/* Breadcrumbs */}
           <nav className="mb-6 text-sm text-muted-foreground">

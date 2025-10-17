@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CriterionBranding } from "@/components/criterion-branding";
 
 export default function MarketingLayout({
   children,
@@ -10,9 +11,7 @@ export default function MarketingLayout({
       {/* Simple Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold">
-            Criterion
-          </Link>
+          <CriterionBranding />
           <nav className="flex gap-6 text-sm">
             <Link href="/about" className="hover:underline">
               About
