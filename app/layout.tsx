@@ -6,11 +6,62 @@ import { Analytics } from '@vercel/analytics/next';
 
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
+import { organizationSchema, websiteSchema } from "@/lib/seo/schema";
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://criterion.life";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chat.vercel.ai"),
-  title: "Criterion",
-  description: "Quran powered intelligent assistant.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Criterion - Quran Powered AI Assistant",
+    template: "%s | Criterion",
+  },
+  description: "Ask questions about Islam, the Quran, and Hadith. Get authentic answers from Islamic sources with an AI-powered guide. Search 6,236 Quran verses and 12,416 authentic Hadiths.",
+  keywords: [
+    "Quran search",
+    "Islamic questions", 
+    "learn about Islam",
+    "Quran AI",
+    "Islamic teachings",
+    "understanding Islam",
+    "authentic Hadith",
+    "Islamic guidance"
+  ],
+  authors: [{ name: "Criterion" }],
+  creator: "Criterion",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    title: "Criterion - Quran Powered AI Assistant",
+    description: "Ask questions about Islam, the Quran, and Hadith. Get authentic answers from Islamic sources.",
+    siteName: "Criterion",
+    images: [
+      {
+        url: "/images/logo.png",
+        width: 1024,
+        height: 1024,
+        alt: "Criterion - Quran Powered AI Assistant",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Criterion - Quran Powered AI Assistant",
+    description: "Ask questions about Islam, the Quran, and Hadith. Get authentic answers.",
+    images: ["/images/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export const viewport = {
@@ -69,6 +120,20 @@ export default function RootLayout({
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{
             __html: THEME_COLOR_SCRIPT,
+          }}
+        />
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required for SEO structured data"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required for SEO structured data"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema),
           }}
         />
       </head>
