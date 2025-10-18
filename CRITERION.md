@@ -37,7 +37,8 @@ User asks question
 
 **Search Flow:**
 
-- **Quran**: Vector search → top 7 → add ±2 context verses for top 3
+- **Quran (RAG)**: Vector search → top 7 → add ±2 context verses for top 3
+- **Quran (Search UI)**: Vector search → top 20 → add ±2 context verses for top 3
 - **Hadith**: Vector + Keyword → RRF merge → top 3 (with grade filtering)
 
 ---
@@ -84,14 +85,18 @@ lib/ai/tools/
 **Embedding & Search:**
 
 - `generateEmbedding(text)` → Creates 768-dim vector (Gemini RETRIEVAL_QUERY)
-- `findRelevantVerses(query)` → Vector search + ±2 context verses
+- `findRelevantVerses(query, limit?)` → Vector search + ±2 context verses (default: 7, search UI: 20)
 - `findRelevantHadiths(query, opts)` → Hybrid search with RRF merge
 - `reciprocalRankFusion(resultSets, k=60)` → Merges ranked lists
 
 **Tool Definitions:**
 
-- `queryQuran` → Top 7 verses, top 3 with ±2 context (400-600 tokens)
+- `queryQuran` → Top 7 verses for RAG, top 3 with ±2 context (400-600 tokens)
 - `queryHadith` → Top 3 hadiths, with grade/collection filters
+
+**Search API:**
+
+- `/search/api?q=query` → Returns 20 verses (vs 7 for RAG), same ±2 context for top 3
 
 ### UI Components
 
@@ -168,7 +173,8 @@ providerOptions: {
 }
 
 // Search limits:
-// - Quran: top 7 results, top 3 with ±2 context (~400-600 tokens)
+// - Quran RAG: top 7 results, top 3 with ±2 context (~400-600 tokens)
+// - Quran Search UI: top 20 results, top 3 with ±2 context
 // - Hadith: top 10 candidates each (vector + keyword), RRF merge → top 3
 ```
 

@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Use existing RAG function
-    const verses = await findRelevantVerses(query);
+    // Use existing RAG function with increased limit for search UI
+    const verses = await findRelevantVerses(query, 20);
 
     return NextResponse.json({
       results: verses,

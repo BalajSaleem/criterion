@@ -90,9 +90,11 @@ async function getContextVerses(
 
 /**
  * Find relevant Quranic verses using semantic search
- * Returns top 10 verses, with ±2 context verses for the top 3 most relevant
+ * Returns top N verses, with ±2 context verses for the top 3 most relevant
+ * @param userQuery - The search query
+ * @param limit - Maximum number of verses to return (default: 7 for RAG, 20 for search UI)
  */
-export async function findRelevantVerses(userQuery: string) {
+export async function findRelevantVerses(userQuery: string, limit: number = 7) {
   const timer = new PerformanceTimer("quran:search-total");
 
   // 1. Embed the user's question (using RETRIEVAL_QUERY task type)
@@ -127,8 +129,8 @@ export async function findRelevantVerses(userQuery: string) {
         .innerJoin(quranVerse, eq(quranEmbedding.verseId, quranVerse.id))
         .where(gt(similarity, 0.3)) // Minimum 30% similarity
         .orderBy(desc(similarity))
-        .limit(7), // Top 7 results (optimized from 10)
-    { minSimilarity: 0.3, limit: 7 }
+        .limit(limit),
+    { minSimilarity: 0.3, limit }
   );
 
   // 4. For the top 3 results, fetch ±5 context verses
