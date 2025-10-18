@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, Search } from "lucide-react";
 import Link from "next/link";
@@ -34,21 +35,30 @@ interface SearchResponse {
 }
 
 export default function SearchPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  // Perform the actual search
+  const performSearch = async (searchQuery: string) => {
+    const trimmedQuery = searchQuery.trim();
+    
+    // Validate query
+    if (!trimmedQuery) return;
+    if (trimmedQuery.length > 200) {
+      console.warn("Search query too long, truncating to 200 characters");
+    }
 
     setIsLoading(true);
     setHasSearched(true);
 
     try {
       const response = await fetch(
-        `/search/api?q=${encodeURIComponent(query)}`
+        `/search/api?q=${encodeURIComponent(trimmedQuery.slice(0, 200))}`
       );
       const data = await response.json();
       setResults(data);
@@ -57,6 +67,30 @@ export default function SearchPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Load search from URL on mount
+  useEffect(() => {
+    const urlQuery = searchParams.get("q");
+    if (urlQuery && urlQuery.trim()) {
+      setQuery(urlQuery.trim());
+      performSearch(urlQuery);
+    }
+  }, [searchParams]);
+
+  // Handle search form submission
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    // Update URL without page reload (don't add to history stack)
+    router.replace(`/search?q=${encodeURIComponent(trimmedQuery)}`, {
+      scroll: false, // Preserve scroll position
+    });
+    
+    // Perform search
+    await performSearch(trimmedQuery);
   };
 
   return (
@@ -132,7 +166,11 @@ export default function SearchPage() {
                     type="button"
                     onClick={() => {
                       setQuery(term);
-                      handleSearch({ preventDefault: () => {} } as React.FormEvent);
+                      // Update URL and trigger search
+                      router.replace(`/search?q=${encodeURIComponent(term)}`, {
+                        scroll: false,
+                      });
+                      performSearch(term);
                     }}
                     className="text-sm px-3 py-1 rounded-full border hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   >

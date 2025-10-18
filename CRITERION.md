@@ -98,6 +98,14 @@ lib/ai/tools/
 
 - `/search/api?q=query` → Returns 20 verses (vs 7 for RAG), same ±2 context for top 3
 
+**Shareable URLs (Phase 1 Implemented):**
+
+- `/search?q=patience` → Shareable search results with URL sync
+  - Auto-loads results on page mount from URL parameter
+  - Updates URL on search without page reload (router.replace)
+  - Query validation: trimmed, max 200 chars, URL encoded
+  - Redirects empty queries to `/search`
+
 ### UI Components
 
 - `QuranVerses` - Displays verses with ±2 context, links to Quran.com
@@ -296,6 +304,13 @@ score = sum(1 / (rank + k)) across all result lists
 ---
 
 ## 12. Next Steps
+
+**Shareability Roadmap:**
+
+- ✅ **Phase 1 Complete:** URL-based search (`/search?q=patience`)
+- 🔄 **Phase 2 In Progress:** Individual verse routes (`/quran/[surahNumber]/[ayahNumber]`)
+- 📋 **Phase 3 Planned:** Rich metadata for social sharing (OG tags, Twitter cards)
+- 📋 **Phase 4 Planned:** Share buttons and copy-link UI
 
 **High Priority:**
 
