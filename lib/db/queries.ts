@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  lte,
   type SQL,
 } from "drizzle-orm";
 import type { VisibilityType } from "@/components/visibility-selector";
@@ -592,6 +593,108 @@ export async function getVersesBySurah({ surahNumber }: { surahNumber: number })
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to get verses by surah"
+    );
+  }
+}
+
+export async function getVerseWithContext({
+  surahNumber,
+  ayahNumber,
+  contextWindow = 5,
+}: {
+  surahNumber: number;
+  ayahNumber: number;
+  contextWindow?: number;
+}) {
+  try {
+    const { quranVerse } = await import("./schema");
+
+    // Get the target verse
+    const [targetVerse] = await db
+      .select()
+      .from(quranVerse)
+      .where(
+        and(
+          eq(quranVerse.surahNumber, surahNumber),
+          eq(quranVerse.ayahNumber, ayahNumber)
+        )
+      )
+      .limit(1)
+      .execute();
+
+    if (!targetVerse) {
+      return null;
+    }
+
+    // Get context before (same surah, earlier verses)
+    const contextBefore = await db
+      .select()
+      .from(quranVerse)
+      .where(
+        and(
+          eq(quranVerse.surahNumber, surahNumber),
+          gte(quranVerse.ayahNumber, ayahNumber - contextWindow),
+          lt(quranVerse.ayahNumber, ayahNumber)
+        )
+      )
+      .orderBy(asc(quranVerse.ayahNumber))
+      .execute();
+
+    // Get context after (same surah, later verses)
+    const contextAfter = await db
+      .select()
+      .from(quranVerse)
+      .where(
+        and(
+          eq(quranVerse.surahNumber, surahNumber),
+          gt(quranVerse.ayahNumber, ayahNumber),
+          lte(quranVerse.ayahNumber, ayahNumber + contextWindow)
+        )
+      )
+      .orderBy(asc(quranVerse.ayahNumber))
+      .execute();
+
+    return {
+      target: targetVerse,
+      contextBefore,
+      contextAfter,
+    };
+  } catch (error) {
+    console.error("Failed to get verse with context:", error);
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get verse with context"
+    );
+  }
+}
+
+export async function getVerseBySurahAndAyah({
+  surahNumber,
+  ayahNumber,
+}: {
+  surahNumber: number;
+  ayahNumber: number;
+}) {
+  try {
+    const { quranVerse } = await import("./schema");
+    const [verse] = await db
+      .select()
+      .from(quranVerse)
+      .where(
+        and(
+          eq(quranVerse.surahNumber, surahNumber),
+          eq(quranVerse.ayahNumber, ayahNumber)
+        )
+      )
+      .limit(1)
+      .execute();
+
+    return verse || null;
+  } catch (error) {
+    console.error("Failed to get verse by surah and ayah:", error);
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get verse by surah and ayah"
     );
   }
 }

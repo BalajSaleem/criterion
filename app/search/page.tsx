@@ -213,15 +213,23 @@ export default function SearchPage() {
                   >
                     {/* Surah Reference */}
                     <div className="flex items-center justify-between mb-4">
-                      <a
-                        href={`https://quran.com/${result.surahNumber}/${result.ayahNumber}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium hover:underline"
-                      >
-                        {result.surahNameEnglish} {result.surahNumber}:
-                        {result.ayahNumber}
-                      </a>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/quran/${result.surahNumber}/${result.ayahNumber}`}
+                          className="text-sm font-medium hover:underline hover:text-primary transition-colors"
+                        >
+                          {result.surahNameEnglish} {result.surahNumber}:
+                          {result.ayahNumber}
+                        </Link>
+                        <a
+                          href={`https://quran.com/${result.surahNumber}/${result.ayahNumber}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Quran.com ↗
+                        </a>
+                      </div>
                       <span className="text-xs text-zinc-500">
                         {Math.round(result.similarity * 100)}% match
                       </span>

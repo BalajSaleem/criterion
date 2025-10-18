@@ -98,18 +98,51 @@ lib/ai/tools/
 
 - `/search/api?q=query` → Returns 20 verses (vs 7 for RAG), same ±2 context for top 3
 
-**Shareable URLs (Phase 1 Implemented):**
+**Shareable URLs:**
 
-- `/search?q=patience` → Shareable search results with URL sync
-  - Auto-loads results on page mount from URL parameter
-  - Updates URL on search without page reload (router.replace)
-  - Query validation: trimmed, max 200 chars, URL encoded
-  - Redirects empty queries to `/search`
+- `/search?q=patience` → Shareable search results with URL sync (auto-loads on mount, updates URL via router.replace, validates queries)
+- `/quran/2/255` → Individual verse with ±5 context verses (toggle via `?context=false`)
+  - Previous/Next navigation, links to full Surah and Quran.com
+  - Rich metadata (Open Graph, Twitter cards, breadcrumbs, Schema.org)
+  - 404s for invalid verse references
+
+### Database Functions
+
+- `getVersesBySurah({ surahNumber })` → All verses in a Surah
+- `getVerseWithContext({ surahNumber, ayahNumber, contextWindow? })` → Target verse + ±5 context (default)
+- `getVerseBySurahAndAyah({ surahNumber, ayahNumber })` → Single verse lookup
 
 ### UI Components
 
+**Chat Components:**
+
 - `QuranVerses` - Displays verses with ±2 context, links to Quran.com
 - `HadithNarrations` - Displays hadiths with grade badges, collapsible narrator chains, links to Sunnah.com
+
+**Quran Page Components:** (Shared between Surah and Verse pages)
+
+```
+components/quran/
+├── layout/
+│   ├── quran-page-layout.tsx       # Page wrapper with header/footer
+│   ├── quran-page-header.tsx       # Header with nav links
+│   └── quran-breadcrumbs.tsx       # Dynamic breadcrumb navigation
+├── verse/
+│   ├── verse-card.tsx              # Single verse display (default|highlighted|context)
+│   ├── verse-header.tsx            # Surah/verse title section
+│   └── context-toggle.tsx          # Show/hide context link
+├── navigation/
+│   └── page-navigation.tsx         # Prev/Next buttons (generic)
+└── shared/
+    └── chat-cta.tsx                # CTA to chat section
+```
+
+**Component Benefits:**
+
+- ~40% code reduction in page files
+- Single source of truth for styling
+- Easier to add features (e.g., share buttons)
+- Page files focus on data fetching + composition
 
 ---
 
@@ -307,10 +340,11 @@ score = sum(1 / (rank + k)) across all result lists
 
 **Shareability Roadmap:**
 
-- ✅ **Phase 1 Complete:** URL-based search (`/search?q=patience`)
-- 🔄 **Phase 2 In Progress:** Individual verse routes (`/quran/[surahNumber]/[ayahNumber]`)
-- 📋 **Phase 3 Planned:** Rich metadata for social sharing (OG tags, Twitter cards)
-- 📋 **Phase 4 Planned:** Share buttons and copy-link UI
+- ✅ **Phase 1:** URL-based search (`/search?q=patience`)
+- ✅ **Phase 2:** Individual verse routes (`/quran/2/255` with ±5 context)
+- ✅ **Component Refactor:** Extracted shared Quran page components (40% code reduction)
+- 📋 **Phase 3:** Share buttons and copy-link UI
+- 📋 **Phase 4:** Dynamic OG images for verses
 
 **High Priority:**
 
