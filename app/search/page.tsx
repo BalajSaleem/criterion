@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, Search } from "lucide-react";
@@ -34,7 +34,7 @@ interface SearchResponse {
   count: number;
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -204,36 +204,29 @@ export default function SearchPage() {
 
               <div className="space-y-6">
                 {results.results.map((result, index) => (
-                  <motion.div
+                  <Link
                     key={`${result.surahNumber}:${result.ayahNumber}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="border rounded-lg p-6 hover:border-zinc-400 transition-colors"
+                    href={`/quran/${result.surahNumber}/${result.ayahNumber}`}
+                    className="block"
                   >
-                    {/* Surah Reference */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <Link
-                          href={`/quran/${result.surahNumber}/${result.ayahNumber}`}
-                          className="text-sm font-medium hover:underline hover:text-primary transition-colors"
-                        >
-                          {result.surahNameEnglish} {result.surahNumber}:
-                          {result.ayahNumber}
-                        </Link>
-                        <a
-                          href={`https://quran.com/${result.surahNumber}/${result.ayahNumber}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          Quran.com ↗
-                        </a>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="border rounded-lg p-6 hover:border-zinc-400 transition-colors cursor-pointer"
+                    >
+                      {/* Surah Reference */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-primary">
+                            {result.surahNameEnglish} {result.surahNumber}:
+                            {result.ayahNumber}
+                          </span>
+                        </div>
+                        <span className="text-xs text-zinc-500">
+                          {Math.round(result.similarity * 100)}% match
+                        </span>
                       </div>
-                      <span className="text-xs text-zinc-500">
-                        {Math.round(result.similarity * 100)}% match
-                      </span>
-                    </div>
 
                     {/* Context Before */}
                     {result.hasContext && result.contextBefore && result.contextBefore.length > 0 && (
@@ -278,7 +271,8 @@ export default function SearchPage() {
                         ))}
                       </div>
                     )}
-                  </motion.div>
+                    </motion.div>
+                  </Link>
                 ))}
               </div>
             </motion.div>
@@ -296,5 +290,17 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-zinc-400" />
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 }
