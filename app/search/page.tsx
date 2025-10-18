@@ -100,6 +100,9 @@ function SearchPageContent() {
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <CriterionBranding />
           <nav className="flex gap-4 md:gap-6 text-sm">
+            <Link href="/" className="hover:underline">
+              Chat
+            </Link>
             <Link href="/about" className="hover:underline">
               About
             </Link>
