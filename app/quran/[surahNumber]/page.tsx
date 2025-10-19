@@ -3,14 +3,19 @@ import type { Metadata } from 'next';
 import { getVersesBySurah } from '@/lib/db/queries';
 import { getSurahMetadata } from '@/lib/quran-metadata';
 import { createBreadcrumbSchema } from '@/lib/seo/schema';
+import { getQuranLanguageFromParam } from '@/lib/quran-language';
 import { QuranPageLayout } from '@/components/quran/layout/quran-page-layout';
 import { VerseHeader } from '@/components/quran/verse/verse-header';
 import { VerseCard } from '@/components/quran/verse/verse-card';
 import { PageNavigation } from '@/components/quran/navigation/page-navigation';
+import { LanguageSelector } from '@/components/quran/language-selector';
 
 interface PageProps {
   params: Promise<{
     surahNumber: string;
+  }>;
+  searchParams: Promise<{
+    lang?: string;
   }>;
 }
 
@@ -54,9 +59,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function SurahPage({ params }: PageProps) {
+export default async function SurahPage({ params, searchParams }: PageProps) {
   const { surahNumber } = await params;
+  const { lang: langParam } = await searchParams;
   const num = Number.parseInt(surahNumber);
+  const language = getQuranLanguageFromParam(langParam);
 
   // Validate surah number
   if (Number.isNaN(num) || num < 1 || num > 114) {
@@ -68,8 +75,8 @@ export default async function SurahPage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch all verses for this Surah
-  const verses = await getVersesBySurah({ surahNumber: num });
+  // Fetch all verses for this Surah with language support
+  const verses = await getVersesBySurah({ surahNumber: num, language });
 
   if (verses.length === 0) {
     notFound();
@@ -111,6 +118,11 @@ export default async function SurahPage({ params }: PageProps) {
           number: metadata.number,
         }}
       />
+
+      {/* Language Selector */}
+      <div className="mb-8 flex justify-end">
+        <LanguageSelector currentLanguage={language} className="w-[200px]" />
+      </div>
 
       {/* Verses */}
       <div className="space-y-6">

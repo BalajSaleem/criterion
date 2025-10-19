@@ -108,9 +108,10 @@ lib/ai/tools/
 
 ### Database Functions
 
-- `getVersesBySurah({ surahNumber })` → All verses in a Surah
-- `getVerseWithContext({ surahNumber, ayahNumber, contextWindow? })` → Target verse + ±5 context (default)
-- `getVerseBySurahAndAyah({ surahNumber, ayahNumber })` → Single verse lookup
+- `getVersesBySurah({ surahNumber, language? })` → All verses in a Surah (English or translation)
+- `getVerseWithContext({ surahNumber, ayahNumber, contextWindow?, language? })` → Target verse + ±5 context
+- `getVerseBySurahAndAyah({ surahNumber, ayahNumber, language? })` → Single verse lookup
+- **Language handling**: English = direct query (fast), translations = single JOIN to `QuranTranslation`
 
 ### UI Components
 
@@ -133,6 +134,7 @@ components/quran/
 │   └── context-toggle.tsx          # Show/hide context link
 ├── navigation/
 │   └── page-navigation.tsx         # Prev/Next buttons (generic)
+├── language-selector.tsx           # Language dropdown with translator info
 └── shared/
     └── chat-cta.tsx                # CTA to chat section
 ```
@@ -148,12 +150,19 @@ components/quran/
 
 ## 5. Data
 
-**Quran:** 6,236 verses (Arabic + English)  
+**Quran:** 6,236 verses (Arabic + English master, Slovak translation)  
 **Hadith:** 12,416 narrations from Bukhari (7,558), Muslim (2,920), Nawawi40 (42), Riyadussalihin (1,896)
 
+**Multilingual Support:**
+
+- English (master): Stored in `QuranVerse` table (fast, no JOINs)
+- Slovak: Stored in `QuranTranslation` table (single JOIN, <200ms)
+- UI: Language selector with translator attribution in dropdown
+
 ```bash
-pnpm ingest:quran   # ~10 min
-pnpm ingest:hadith  # ~20 min
+pnpm ingest:quran          # English master (~10 min)
+pnpm ingest:quran:slovak   # Slovak translation (~5 min)
+pnpm ingest:hadith         # ~20 min
 ```
 
 ---
@@ -167,9 +176,11 @@ pnpm db:migrate       # Run migrations
 pnpm db:studio        # Database GUI
 
 # Data
-pnpm clear:quran      # Clear Quran data
-pnpm ingest:quran     # Load Quran + embeddings
-pnpm test:quran       # Test search
+pnpm clear:quran         # Clear Quran data
+pnpm ingest:quran        # Load English Quran + embeddings
+pnpm ingest:quran:slovak # Load Slovak translation
+pnpm test:quran          # Test search
+pnpm test:multilingual   # Test language queries
 
 pnpm clear:hadith     # Clear Hadith data
 pnpm ingest:hadith    # Load Hadith + embeddings
@@ -320,17 +331,19 @@ score = sum(1 / (rank + k)) across all result lists
 
 ## 10. Performance
 
-| Operation              | Time      |
-| ---------------------- | --------- |
-| Quran search + context | 100-150ms |
-| Hadith hybrid search   | 100-150ms |
-| Total query time       | <200ms    |
+| Operation              | Time      | Notes                         |
+| ---------------------- | --------- | ----------------------------- |
+| Quran search + context | 100-150ms | English (no JOIN)             |
+| Quran search (Slovak)  | 150-200ms | Single JOIN to translations   |
+| Hadith hybrid search   | 100-150ms | RRF merge                     |
+| Total query time       | <200ms    | Optimized with HNSW + indexes |
 
 ---
 
 ## 11. Limitations
 
-- English-only queries (Arabic embeddings not yet supported)
+- **Search & RAG**: English-only (vector embeddings not yet multilingual)
+- **Reading**: English + Slovak (expandable via `QuranTranslation` table)
 - No Tafsir (commentary) yet
 - Gemini free tier: 1,500 requests/day
 
@@ -343,13 +356,14 @@ score = sum(1 / (rank + k)) across all result lists
 - ✅ **Phase 1:** URL-based search (`/search?q=patience`)
 - ✅ **Phase 2:** Individual verse routes (`/quran/2/255` with ±5 context)
 - ✅ **Component Refactor:** Extracted shared Quran page components (40% code reduction)
+- ✅ **Multilingual Quran:** Slovak translation with language selector UI
 - 📋 **Phase 3:** Share buttons and copy-link UI
 - 📋 **Phase 4:** Dynamic OG images for verses
 
 **High Priority:**
 
+- Multilingual RAG (Arabic queries, more translations)
 - Contextual chunk embeddings (+35% accuracy)
-- Multilingual support (Arabic queries)
 
 **Medium Priority:**
 

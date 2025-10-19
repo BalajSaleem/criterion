@@ -11,5 +11,8 @@ export { VerseHeader } from './verse/verse-header';
 export { PageNavigation } from './navigation/page-navigation';
 export { ContextToggle } from './navigation/context-toggle';
 
+// Language components
+export { LanguageSelector } from './language-selector';
+
 // Shared components
 export { ChatCTA } from './shared/chat-cta';

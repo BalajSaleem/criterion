@@ -9,6 +9,9 @@ interface VerseCardProps {
     textArabic: string;
     textEnglish: string;
     surahNameEnglish?: string;
+    // Multilingual support
+    translation?: string | null;
+    translatorName?: string | null;
   };
   variant?: 'default' | 'highlighted' | 'context';
   showVerseLink?: boolean;
@@ -26,6 +29,9 @@ export function VerseCard({
   const isHighlighted = variant === 'highlighted';
   const isContext = variant === 'context';
   const isCardClickable = showVerseLink && (variant === 'default' || isContext);
+
+  // Use translation if available, otherwise fall back to textEnglish
+  const translationText = verse.translation || verse.textEnglish;
 
   const cardClasses = cn(
     'rounded-lg p-6 transition-colors',
@@ -97,9 +103,9 @@ export function VerseCard({
         {verse.textArabic}
       </p>
 
-      {/* English Translation */}
+      {/* Translation */}
       <p className={englishTextClasses}>
-        {verse.textEnglish}
+        {translationText}
       </p>
     </>
   );

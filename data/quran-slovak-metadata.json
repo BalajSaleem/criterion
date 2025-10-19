@@ -1,0 +1,470 @@
+{
+  "translator": {
+    "translatorName": "JUDr. Abdulwahab Al-Sbenaty",
+    "translatorSlug": "al-sbenaty",
+    "edition": "Third Edition",
+    "publishedYear": 2015,
+    "sourceInfo": "King Fahd Complex for Printing the Quran, Saudi Arabia",
+    "isDefault": true
+  },
+  "surahNames": {
+    "1": {
+      "transliterated": "Al-Fátiha",
+      "translated": "Úvodná kapitola"
+    },
+    "2": {
+      "transliterated": "Al-Baqara",
+      "translated": "Krava"
+    },
+    "3": {
+      "transliterated": "Áli Imrán",
+      "translated": "Rod Imránov"
+    },
+    "4": {
+      "transliterated": "An-Nisá",
+      "translated": "Ženy"
+    },
+    "5": {
+      "transliterated": "Al-Máida",
+      "translated": "Stôl"
+    },
+    "6": {
+      "transliterated": "Al-Anám",
+      "translated": "Dobytok"
+    },
+    "7": {
+      "transliterated": "Al-Aráf",
+      "translated": "Výšiny"
+    },
+    "8": {
+      "transliterated": "Al-Anfál",
+      "translated": "Korisť"
+    },
+    "9": {
+      "transliterated": "At-Tawba",
+      "translated": "Pokánie"
+    },
+    "10": {
+      "transliterated": "Júnus",
+      "translated": "Jonáš"
+    },
+    "11": {
+      "transliterated": "Húd",
+      "translated": "Húd"
+    },
+    "12": {
+      "transliterated": "Júsuf",
+      "translated": "Jozef"
+    },
+    "13": {
+      "transliterated": "Ar-Rád",
+      "translated": "Hrom"
+    },
+    "14": {
+      "transliterated": "Ibráhím",
+      "translated": "Abrahám"
+    },
+    "15": {
+      "transliterated": "Al-Hiďžr",
+      "translated": "Skalnaté údolie"
+    },
+    "16": {
+      "transliterated": "An-Nahl",
+      "translated": "Včela"
+    },
+    "17": {
+      "transliterated": "Al-Isrá",
+      "translated": "Nočná cesta"
+    },
+    "18": {
+      "transliterated": "Al-Kahf",
+      "translated": "Jaskyňa"
+    },
+    "19": {
+      "transliterated": "Marjam",
+      "translated": "Mária"
+    },
+    "20": {
+      "transliterated": "Táhá",
+      "translated": "Táhá"
+    },
+    "21": {
+      "transliterated": "Al-Anbiját",
+      "translated": "Proroci"
+    },
+    "22": {
+      "transliterated": "Al-Hadždž",
+      "translated": "Púť"
+    },
+    "23": {
+      "transliterated": "Al-Muminún",
+      "translated": "Veriaci"
+    },
+    "24": {
+      "transliterated": "An-Núr",
+      "translated": "Svetlo"
+    },
+    "25": {
+      "transliterated": "Al-Furqán",
+      "translated": "Kritérium"
+    },
+    "26": {
+      "transliterated": "Aš-Šuará",
+      "translated": "Básnici"
+    },
+    "27": {
+      "transliterated": "An-Naml",
+      "translated": "Mravce"
+    },
+    "28": {
+      "transliterated": "Al-Qasas",
+      "translated": "Príbeh"
+    },
+    "29": {
+      "transliterated": "Al-Ankabút",
+      "translated": "Pavúk"
+    },
+    "30": {
+      "transliterated": "Ar-Rúm",
+      "translated": "Rimania"
+    },
+    "31": {
+      "transliterated": "Luqmán",
+      "translated": "Luqmán"
+    },
+    "32": {
+      "transliterated": "As-Sadžda",
+      "translated": "Pokľaknutie"
+    },
+    "33": {
+      "transliterated": "Al-Ahzáb",
+      "translated": "Skupiny"
+    },
+    "34": {
+      "transliterated": "Sabá",
+      "translated": "Sába"
+    },
+    "35": {
+      "transliterated": "Fátir",
+      "translated": "Stvoriteľ"
+    },
+    "36": {
+      "transliterated": "Já Sín",
+      "translated": "Já Sín"
+    },
+    "37": {
+      "transliterated": "As-Sáfát",
+      "translated": "Radení do radov"
+    },
+    "38": {
+      "transliterated": "Sád",
+      "translated": "Sád"
+    },
+    "39": {
+      "transliterated": "Az-Zumar",
+      "translated": "Skupiny"
+    },
+    "40": {
+      "transliterated": "Gáfir",
+      "translated": "Odpúšťajúci"
+    },
+    "41": {
+      "transliterated": "Fussilat",
+      "translated": "Vysvetlené"
+    },
+    "42": {
+      "transliterated": "Aš-Šúrá",
+      "translated": "Porada"
+    },
+    "43": {
+      "transliterated": "Az-Zuchruf",
+      "translated": "Ozdoby"
+    },
+    "44": {
+      "transliterated": "Ad-Duchán",
+      "translated": "Dym"
+    },
+    "45": {
+      "transliterated": "Al-Džásija",
+      "translated": "Pokľaknutie"
+    },
+    "46": {
+      "transliterated": "Al-Ahqáf",
+      "translated": "Piesočné duny"
+    },
+    "47": {
+      "transliterated": "Muhammad",
+      "translated": "Muhammad"
+    },
+    "48": {
+      "transliterated": "Al-Fath",
+      "translated": "Víťazstvo"
+    },
+    "49": {
+      "transliterated": "Al-Hudžurát",
+      "translated": "Príbytky"
+    },
+    "50": {
+      "transliterated": "Qáf",
+      "translated": "Qáf"
+    },
+    "51": {
+      "transliterated": "Ad-Dáriját",
+      "translated": "Rozháňajúce"
+    },
+    "52": {
+      "transliterated": "At-Túr",
+      "translated": "Hora"
+    },
+    "53": {
+      "transliterated": "An-Nadžm",
+      "translated": "Hviezda"
+    },
+    "54": {
+      "transliterated": "Al-Qamar",
+      "translated": "Mesiac"
+    },
+    "55": {
+      "transliterated": "Ar-Rahmán",
+      "translated": "Milosrdný"
+    },
+    "56": {
+      "transliterated": "Al-Wáqia",
+      "translated": "Udalosť"
+    },
+    "57": {
+      "transliterated": "Al-Hadíd",
+      "translated": "Železo"
+    },
+    "58": {
+      "transliterated": "Al-Mudžádila",
+      "translated": "Hádajúca sa žena"
+    },
+    "59": {
+      "transliterated": "Al-Hašr",
+      "translated": "Zhromaždenie"
+    },
+    "60": {
+      "transliterated": "Al-Mumtahana",
+      "translated": "Skúšaná"
+    },
+    "61": {
+      "transliterated": "As-Saff",
+      "translated": "Šík"
+    },
+    "62": {
+      "transliterated": "Al-Džumua",
+      "translated": "Piatok"
+    },
+    "63": {
+      "transliterated": "Al-Munáfiqún",
+      "translated": "Pokrytci"
+    },
+    "64": {
+      "transliterated": "At-Tagábun",
+      "translated": "Vzájomné oklamanie"
+    },
+    "65": {
+      "transliterated": "At-Taláq",
+      "translated": "Rozvod"
+    },
+    "66": {
+      "transliterated": "At-Tahrím",
+      "translated": "Zákaz"
+    },
+    "67": {
+      "transliterated": "Al-Mulk",
+      "translated": "Kráľovstvo"
+    },
+    "68": {
+      "transliterated": "Al-Qalam",
+      "translated": "Pero"
+    },
+    "69": {
+      "transliterated": "Al-Háqqa",
+      "translated": "Nevyhnutná udalosť"
+    },
+    "70": {
+      "transliterated": "Al-Maáridž",
+      "translated": "Stupne"
+    },
+    "71": {
+      "transliterated": "Núh",
+      "translated": "Noe"
+    },
+    "72": {
+      "transliterated": "Al-Džinn",
+      "translated": "Džinovia"
+    },
+    "73": {
+      "transliterated": "Al-Muzzammil",
+      "translated": "Zahalený"
+    },
+    "74": {
+      "transliterated": "Al-Muddassir",
+      "translated": "Zahalený"
+    },
+    "75": {
+      "transliterated": "Al-Qijáma",
+      "translated": "Vzkriesenie"
+    },
+    "76": {
+      "transliterated": "Al-Insán",
+      "translated": "Človek"
+    },
+    "77": {
+      "transliterated": "Al-Mursalát",
+      "translated": "Poslané"
+    },
+    "78": {
+      "transliterated": "An-Nabá",
+      "translated": "Správa"
+    },
+    "79": {
+      "transliterated": "An-Náziat",
+      "translated": "Vytrhávajúce"
+    },
+    "80": {
+      "transliterated": "Abasa",
+      "translated": "Zamračil sa"
+    },
+    "81": {
+      "transliterated": "At-Takwír",
+      "translated": "Zvinutie"
+    },
+    "82": {
+      "transliterated": "Al-Infitár",
+      "translated": "Rozštiepenie"
+    },
+    "83": {
+      "transliterated": "Al-Mutaffifín",
+      "translated": "Podvádzajúci pri meraní"
+    },
+    "84": {
+      "transliterated": "Al-Inšiqáq",
+      "translated": "Rozpuknutie"
+    },
+    "85": {
+      "transliterated": "Al-Burúdž",
+      "translated": "Súhvezdia"
+    },
+    "86": {
+      "transliterated": "At-Táriq",
+      "translated": "Nočný návštevník"
+    },
+    "87": {
+      "transliterated": "Al-Alá",
+      "translated": "Najvyšší"
+    },
+    "88": {
+      "transliterated": "Al-Gášija",
+      "translated": "Zahaľujúca"
+    },
+    "89": {
+      "transliterated": "Al-Fadžr",
+      "translated": "Úsvit"
+    },
+    "90": {
+      "transliterated": "Al-Balad",
+      "translated": "Mesto"
+    },
+    "91": {
+      "transliterated": "Aš-Šams",
+      "translated": "Slnko"
+    },
+    "92": {
+      "transliterated": "Al-Lajl",
+      "translated": "Noc"
+    },
+    "93": {
+      "transliterated": "Ad-Duhá",
+      "translated": "Jasné ráno"
+    },
+    "94": {
+      "transliterated": "Aš-Šarh",
+      "translated": "Rozšírenie"
+    },
+    "95": {
+      "transliterated": "At-Tín",
+      "translated": "Figa"
+    },
+    "96": {
+      "transliterated": "Al-Alaq",
+      "translated": "Zrazená krv"
+    },
+    "97": {
+      "transliterated": "Al-Qadr",
+      "translated": "Noc Al Qadr"
+    },
+    "98": {
+      "transliterated": "Al-Bajjina",
+      "translated": "Jasný dôkaz"
+    },
+    "99": {
+      "transliterated": "Az-Zalzala",
+      "translated": "Zemetrasenie"
+    },
+    "100": {
+      "transliterated": "Al-Ádiját",
+      "translated": "Bežiace"
+    },
+    "101": {
+      "transliterated": "Al-Qária",
+      "translated": "Al Qária"
+    },
+    "102": {
+      "transliterated": "Al-Takásor",
+      "translated": "Súperenie"
+    },
+    "103": {
+      "transliterated": "Al-Asr",
+      "translated": "Popoludnie"
+    },
+    "104": {
+      "transliterated": "Al-Humaza",
+      "translated": "Ohovárač"
+    },
+    "105": {
+      "transliterated": "Al-Fíľ",
+      "translated": "Slon"
+    },
+    "106": {
+      "transliterated": "Qurejš",
+      "translated": "Kmeň Qurejšovcov"
+    },
+    "107": {
+      "transliterated": "Al-Máun",
+      "translated": "Úžitok"
+    },
+    "108": {
+      "transliterated": "Al-Kawsar",
+      "translated": "Rajská rieka"
+    },
+    "109": {
+      "transliterated": "Al-Káfirun",
+      "translated": "Odmietajúci vieru"
+    },
+    "110": {
+      "transliterated": "Al-Nasr",
+      "translated": "Víťazstvo"
+    },
+    "111": {
+      "transliterated": "Al-Masad",
+      "translated": "Palmový povraz"
+    },
+    "112": {
+      "transliterated": "Al-Ichľás",
+      "translated": "Oddanosť"
+    },
+    "113": {
+      "transliterated": "Al-FALAQ",
+      "translated": "Úsvit"
+    },
+    "114": {
+      "transliterated": "Al-Nás",
+      "translated": "Ľudia"
+    }
+  },
+  "verseCount": 6236,
+  "parsedAt": "2025-10-19T15:15:45.156Z"
+}

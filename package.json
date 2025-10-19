@@ -19,7 +19,9 @@
     "db:enable-pgvector": "npx tsx scripts/enable-pgvector.ts",
     "clear:quran": "npx tsx scripts/clear-quran-data.ts",
     "ingest:quran": "npx tsx scripts/ingest-quran.ts",
+    "ingest:quran:slovak": "npx tsx scripts/ingest-quran-slovak.ts",
     "test:quran": "npx tsx scripts/test-quran-search.ts",
+    "test:multilingual": "npx tsx scripts/test-multilingual-queries.ts",
     "clear:hadith": "npx tsx scripts/clear-hadith-data.ts",
     "ingest:hadith": "npx tsx scripts/ingest-hadith.ts",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"

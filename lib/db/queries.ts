@@ -577,17 +577,68 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
 // Quran Queries
 // =======================
 
-export async function getVersesBySurah({ surahNumber }: { surahNumber: number }) {
+export async function getVersesBySurah({
+  surahNumber,
+  language = "en",
+}: {
+  surahNumber: number;
+  language?: string;
+}) {
   try {
-    const { quranVerse } = await import("./schema");
+    const { quranVerse, quranTranslation } = await import("./schema");
+
+    // Fast path: English (no JOIN)
+    if (language === "en") {
+      const verses = await db
+        .select()
+        .from(quranVerse)
+        .where(eq(quranVerse.surahNumber, surahNumber))
+        .orderBy(asc(quranVerse.ayahNumber))
+        .execute();
+
+      return verses.map((v) => ({
+        ...v,
+        translation: v.textEnglish,
+        surahNameTranslated: v.surahNameEnglish,
+        translatorName: null,
+      }));
+    }
+
+    // Other languages: JOIN with translations
     const verses = await db
-      .select()
+      .select({
+        id: quranVerse.id,
+        surahNumber: quranVerse.surahNumber,
+        ayahNumber: quranVerse.ayahNumber,
+        surahNameArabic: quranVerse.surahNameArabic,
+        surahNameEnglish: quranVerse.surahNameEnglish,
+        textArabic: quranVerse.textArabic,
+        textEnglish: quranVerse.textEnglish,
+        createdAt: quranVerse.createdAt,
+        translation: quranTranslation.text,
+        surahNameTranslated: quranTranslation.surahNameTranslated,
+        surahNameTransliterated: quranTranslation.surahNameTransliterated,
+        translatorName: quranTranslation.translatorName,
+      })
       .from(quranVerse)
+      .leftJoin(
+        quranTranslation,
+        and(
+          eq(quranTranslation.verseId, quranVerse.id),
+          eq(quranTranslation.language, language),
+          eq(quranTranslation.isDefault, true)
+        )
+      )
       .where(eq(quranVerse.surahNumber, surahNumber))
       .orderBy(asc(quranVerse.ayahNumber))
       .execute();
-    
-    return verses;
+
+    // Fallback to English if translation not found
+    return verses.map((v) => ({
+      ...v,
+      translation: v.translation || v.textEnglish,
+      surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
+    }));
   } catch (error) {
     console.error("Failed to get verses by surah:", error);
     throw new ChatSDKError(
@@ -601,18 +652,110 @@ export async function getVerseWithContext({
   surahNumber,
   ayahNumber,
   contextWindow = 5,
+  language = "en",
 }: {
   surahNumber: number;
   ayahNumber: number;
   contextWindow?: number;
+  language?: string;
 }) {
   try {
-    const { quranVerse } = await import("./schema");
+    const { quranVerse, quranTranslation } = await import("./schema");
 
-    // Get the target verse
+    // Fast path: English (no JOIN)
+    if (language === "en") {
+      // Get the target verse
+      const [targetVerse] = await db
+        .select()
+        .from(quranVerse)
+        .where(
+          and(
+            eq(quranVerse.surahNumber, surahNumber),
+            eq(quranVerse.ayahNumber, ayahNumber)
+          )
+        )
+        .limit(1)
+        .execute();
+
+      if (!targetVerse) {
+        return null;
+      }
+
+      // Get context before
+      const contextBefore = await db
+        .select()
+        .from(quranVerse)
+        .where(
+          and(
+            eq(quranVerse.surahNumber, surahNumber),
+            gte(quranVerse.ayahNumber, ayahNumber - contextWindow),
+            lt(quranVerse.ayahNumber, ayahNumber)
+          )
+        )
+        .orderBy(asc(quranVerse.ayahNumber))
+        .execute();
+
+      // Get context after
+      const contextAfter = await db
+        .select()
+        .from(quranVerse)
+        .where(
+          and(
+            eq(quranVerse.surahNumber, surahNumber),
+            gt(quranVerse.ayahNumber, ayahNumber),
+            lte(quranVerse.ayahNumber, ayahNumber + contextWindow)
+          )
+        )
+        .orderBy(asc(quranVerse.ayahNumber))
+        .execute();
+
+      return {
+        target: {
+          ...targetVerse,
+          translation: targetVerse.textEnglish,
+          surahNameTranslated: targetVerse.surahNameEnglish,
+          translatorName: null,
+        },
+        contextBefore: contextBefore.map((v) => ({
+          ...v,
+          translation: v.textEnglish,
+          surahNameTranslated: v.surahNameEnglish,
+          translatorName: null,
+        })),
+        contextAfter: contextAfter.map((v) => ({
+          ...v,
+          translation: v.textEnglish,
+          surahNameTranslated: v.surahNameEnglish,
+          translatorName: null,
+        })),
+      };
+    }
+
+    // Other languages: JOIN with translations
     const [targetVerse] = await db
-      .select()
+      .select({
+        id: quranVerse.id,
+        surahNumber: quranVerse.surahNumber,
+        ayahNumber: quranVerse.ayahNumber,
+        surahNameArabic: quranVerse.surahNameArabic,
+        surahNameEnglish: quranVerse.surahNameEnglish,
+        textArabic: quranVerse.textArabic,
+        textEnglish: quranVerse.textEnglish,
+        createdAt: quranVerse.createdAt,
+        translation: quranTranslation.text,
+        surahNameTranslated: quranTranslation.surahNameTranslated,
+        surahNameTransliterated: quranTranslation.surahNameTransliterated,
+        translatorName: quranTranslation.translatorName,
+      })
       .from(quranVerse)
+      .leftJoin(
+        quranTranslation,
+        and(
+          eq(quranTranslation.verseId, quranVerse.id),
+          eq(quranTranslation.language, language),
+          eq(quranTranslation.isDefault, true)
+        )
+      )
       .where(
         and(
           eq(quranVerse.surahNumber, surahNumber),
@@ -626,10 +769,31 @@ export async function getVerseWithContext({
       return null;
     }
 
-    // Get context before (same surah, earlier verses)
+    // Get context before
     const contextBefore = await db
-      .select()
+      .select({
+        id: quranVerse.id,
+        surahNumber: quranVerse.surahNumber,
+        ayahNumber: quranVerse.ayahNumber,
+        surahNameArabic: quranVerse.surahNameArabic,
+        surahNameEnglish: quranVerse.surahNameEnglish,
+        textArabic: quranVerse.textArabic,
+        textEnglish: quranVerse.textEnglish,
+        createdAt: quranVerse.createdAt,
+        translation: quranTranslation.text,
+        surahNameTranslated: quranTranslation.surahNameTranslated,
+        surahNameTransliterated: quranTranslation.surahNameTransliterated,
+        translatorName: quranTranslation.translatorName,
+      })
       .from(quranVerse)
+      .leftJoin(
+        quranTranslation,
+        and(
+          eq(quranTranslation.verseId, quranVerse.id),
+          eq(quranTranslation.language, language),
+          eq(quranTranslation.isDefault, true)
+        )
+      )
       .where(
         and(
           eq(quranVerse.surahNumber, surahNumber),
@@ -640,10 +804,31 @@ export async function getVerseWithContext({
       .orderBy(asc(quranVerse.ayahNumber))
       .execute();
 
-    // Get context after (same surah, later verses)
+    // Get context after
     const contextAfter = await db
-      .select()
+      .select({
+        id: quranVerse.id,
+        surahNumber: quranVerse.surahNumber,
+        ayahNumber: quranVerse.ayahNumber,
+        surahNameArabic: quranVerse.surahNameArabic,
+        surahNameEnglish: quranVerse.surahNameEnglish,
+        textArabic: quranVerse.textArabic,
+        textEnglish: quranVerse.textEnglish,
+        createdAt: quranVerse.createdAt,
+        translation: quranTranslation.text,
+        surahNameTranslated: quranTranslation.surahNameTranslated,
+        surahNameTransliterated: quranTranslation.surahNameTransliterated,
+        translatorName: quranTranslation.translatorName,
+      })
       .from(quranVerse)
+      .leftJoin(
+        quranTranslation,
+        and(
+          eq(quranTranslation.verseId, quranVerse.id),
+          eq(quranTranslation.language, language),
+          eq(quranTranslation.isDefault, true)
+        )
+      )
       .where(
         and(
           eq(quranVerse.surahNumber, surahNumber),
@@ -655,9 +840,22 @@ export async function getVerseWithContext({
       .execute();
 
     return {
-      target: targetVerse,
-      contextBefore,
-      contextAfter,
+      target: {
+        ...targetVerse,
+        translation: targetVerse.translation || targetVerse.textEnglish,
+        surahNameTranslated:
+          targetVerse.surahNameTranslated || targetVerse.surahNameEnglish,
+      },
+      contextBefore: contextBefore.map((v) => ({
+        ...v,
+        translation: v.translation || v.textEnglish,
+        surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
+      })),
+      contextAfter: contextAfter.map((v) => ({
+        ...v,
+        translation: v.translation || v.textEnglish,
+        surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
+      })),
     };
   } catch (error) {
     console.error("Failed to get verse with context:", error);
@@ -671,15 +869,66 @@ export async function getVerseWithContext({
 export async function getVerseBySurahAndAyah({
   surahNumber,
   ayahNumber,
+  language = "en",
 }: {
   surahNumber: number;
   ayahNumber: number;
+  language?: string;
 }) {
   try {
-    const { quranVerse } = await import("./schema");
+    const { quranVerse, quranTranslation } = await import("./schema");
+
+    // Fast path: English (no JOIN)
+    if (language === "en") {
+      const [verse] = await db
+        .select()
+        .from(quranVerse)
+        .where(
+          and(
+            eq(quranVerse.surahNumber, surahNumber),
+            eq(quranVerse.ayahNumber, ayahNumber)
+          )
+        )
+        .limit(1)
+        .execute();
+
+      if (!verse) {
+        return null;
+      }
+
+      return {
+        ...verse,
+        translation: verse.textEnglish,
+        surahNameTranslated: verse.surahNameEnglish,
+        translatorName: null,
+      };
+    }
+
+    // Other languages: JOIN with translations
     const [verse] = await db
-      .select()
+      .select({
+        id: quranVerse.id,
+        surahNumber: quranVerse.surahNumber,
+        ayahNumber: quranVerse.ayahNumber,
+        surahNameArabic: quranVerse.surahNameArabic,
+        surahNameEnglish: quranVerse.surahNameEnglish,
+        textArabic: quranVerse.textArabic,
+        textEnglish: quranVerse.textEnglish,
+        createdAt: quranVerse.createdAt,
+        translation: quranTranslation.text,
+        surahNameTranslated: quranTranslation.surahNameTranslated,
+        surahNameTransliterated: quranTranslation.surahNameTransliterated,
+        translatorName: quranTranslation.translatorName,
+      })
       .from(quranVerse)
+      .leftJoin(
+        quranTranslation,
+        and(
+          eq(quranTranslation.verseId, quranVerse.id),
+          eq(quranTranslation.language, language),
+          eq(quranTranslation.isDefault, true)
+        )
+      )
       .where(
         and(
           eq(quranVerse.surahNumber, surahNumber),
@@ -689,7 +938,15 @@ export async function getVerseBySurahAndAyah({
       .limit(1)
       .execute();
 
-    return verse || null;
+    if (!verse) {
+      return null;
+    }
+
+    return {
+      ...verse,
+      translation: verse.translation || verse.textEnglish,
+      surahNameTranslated: verse.surahNameTranslated || verse.surahNameEnglish,
+    };
   } catch (error) {
     console.error("Failed to get verse by surah and ayah:", error);
     throw new ChatSDKError(

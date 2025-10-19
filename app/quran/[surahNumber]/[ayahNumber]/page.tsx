@@ -3,11 +3,13 @@ import type { Metadata } from 'next';
 import { getVerseWithContext, getVerseBySurahAndAyah } from '@/lib/db/queries';
 import { getSurahMetadata } from '@/lib/quran-metadata';
 import { createBreadcrumbSchema } from '@/lib/seo/schema';
+import { getQuranLanguageFromParam } from '@/lib/quran-language';
 import { QuranPageLayout } from '@/components/quran/layout/quran-page-layout';
 import { VerseHeader } from '@/components/quran/verse/verse-header';
 import { VerseCard } from '@/components/quran/verse/verse-card';
 import { PageNavigation } from '@/components/quran/navigation/page-navigation';
 import { ContextToggle } from '@/components/quran/navigation/context-toggle';
+import { LanguageSelector } from '@/components/quran/language-selector';
 import { Book } from 'lucide-react';
 
 interface PageProps {
@@ -17,6 +19,7 @@ interface PageProps {
   }>;
   searchParams: Promise<{
     context?: string;
+    lang?: string;
   }>;
 }
 
@@ -67,10 +70,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VersePage({ params, searchParams }: PageProps) {
   const { surahNumber, ayahNumber } = await params;
-  const { context: contextParam } = await searchParams;
+  const { context: contextParam, lang: langParam } = await searchParams;
   
   const surahNum = Number.parseInt(surahNumber);
   const ayahNum = Number.parseInt(ayahNumber);
+  const language = getQuranLanguageFromParam(langParam);
 
   // Validate parameters
   if (Number.isNaN(surahNum) || Number.isNaN(ayahNum) || surahNum < 1 || surahNum > 114 || ayahNum < 1) {
@@ -85,6 +89,7 @@ export default async function VersePage({ params, searchParams }: PageProps) {
     surahNumber: surahNum,
     ayahNumber: ayahNum,
     contextWindow,
+    language,
   });
 
   if (!verseData || !verseData.target) {
@@ -138,6 +143,11 @@ export default async function VersePage({ params, searchParams }: PageProps) {
           },
         ]}
       />
+
+      {/* Language Selector */}
+      <div className="mb-6 flex justify-end">
+        <LanguageSelector currentLanguage={language} className="w-[200px]" />
+      </div>
 
       {/* Context Before */}
       {showContext && contextBefore.length > 0 && (

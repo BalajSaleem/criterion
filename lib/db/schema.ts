@@ -223,6 +223,42 @@ export const quranEmbedding = pgTable(
 
 export type QuranEmbedding = InferSelectModel<typeof quranEmbedding>;
 
+// Quran translations table for additional languages
+export const quranTranslation = pgTable(
+  "QuranTranslation",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    verseId: uuid("verseId")
+      .notNull()
+      .references(() => quranVerse.id, { onDelete: "cascade" }),
+    language: varchar("language", { length: 10 }).notNull(), // 'sk', 'fr', 'ur' (NOT 'en')
+    text: text("text").notNull(),
+    surahNameTransliterated: varchar("surahNameTransliterated", {
+      length: 100,
+    }), // "Al-Fátiha"
+    surahNameTranslated: varchar("surahNameTranslated", { length: 200 }), // "Úvodná kapitola"
+    translatorName: varchar("translatorName", { length: 200 }),
+    translatorSlug: varchar("translatorSlug", { length: 100 }),
+    edition: varchar("edition", { length: 50 }),
+    publishedYear: integer("publishedYear"),
+    sourceInfo: text("sourceInfo"),
+    isDefault: boolean("isDefault").default(true),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    verseLanguageIdx: index("idx_translation_verse_lang").on(
+      table.verseId,
+      table.language
+    ),
+    languageDefaultIdx: index("idx_translation_lang_default").on(
+      table.language,
+      table.isDefault
+    ),
+  })
+);
+
+export type QuranTranslation = InferSelectModel<typeof quranTranslation>;
+
 // Hadith text table
 export const hadithText = pgTable(
   "HadithText",
