@@ -1,5 +1,9 @@
+"use client";
+
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { buildQuranUrl } from '@/lib/quran-url-helpers';
 
 interface VerseCardProps {
   verse: {
@@ -26,12 +30,19 @@ export function VerseCard({
   showQuranComLink = true,
   className,
 }: VerseCardProps) {
+  const searchParams = useSearchParams();
   const isHighlighted = variant === 'highlighted';
   const isContext = variant === 'context';
   const isCardClickable = showVerseLink && (variant === 'default' || isContext);
 
   // Use translation if available, otherwise fall back to textEnglish
   const translationText = verse.translation || verse.textEnglish;
+  
+  // Build verse URL with preserved query params
+  const verseUrl = buildQuranUrl(
+    `/quran/${verse.surahNumber}/${verse.ayahNumber}`,
+    searchParams
+  );
 
   const cardClasses = cn(
     'rounded-lg p-6 transition-colors',
@@ -114,7 +125,7 @@ export function VerseCard({
   if (isCardClickable) {
     return (
       <Link
-        href={`/quran/${verse.surahNumber}/${verse.ayahNumber}`}
+        href={verseUrl}
         className={cn(cardClasses, 'block')}
         id={variant === 'default' ? `verse-${verse.ayahNumber}` : undefined}
       >

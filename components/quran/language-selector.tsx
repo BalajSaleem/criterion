@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -9,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LANGUAGE_NAMES, type QuranLanguage } from "@/lib/quran-language";
+
+const LANGUAGE_STORAGE_KEY = "quran-preferred-language";
 
 interface LanguageSelectorProps {
   currentLanguage?: QuranLanguage;
@@ -23,8 +26,25 @@ export function LanguageSelector({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Apply stored language preference on mount if no URL param exists
+  useEffect(() => {
+    if (!searchParams.has("lang")) {
+      const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY) as QuranLanguage | null;
+      if (stored && stored !== "en") {
+        const params = new URLSearchParams(searchParams);
+        params.set("lang", stored);
+        const queryString = params.toString();
+        const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+        router.replace(newUrl, { scroll: false });
+      }
+    }
+  }, []); // Only run on mount
+
   const handleLanguageChange = (language: QuranLanguage) => {
     const params = new URLSearchParams(searchParams);
+
+    // Save preference to localStorage
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
 
     // Default to English, so remove param if English is selected
     if (language === "en") {
