@@ -5,11 +5,19 @@ import postgres from "postgres";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { quranVerse, quranTranslation } from "@/lib/db/schema";
-import { slovakTranslatorInfo } from "./parse-slovak-quran";
 
 config({
   path: ".env.local",
 });
+
+export const slovakTranslatorInfo = {
+  translatorName: "JUDr. Abdulwahab Al-Sbenaty",
+  translatorSlug: "al-sbenaty",
+  edition: "Third Edition",
+  publishedYear: 2015,
+  sourceInfo: "King Fahd Complex for Printing the Quran, Saudi Arabia",
+  isDefault: true,
+};
 
 interface SlovakVerse {
   surahNumber: number;
