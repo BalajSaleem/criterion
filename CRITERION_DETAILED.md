@@ -1,8 +1,7 @@
 # Criterion - Islamic Knowledge Assistant System Documentation
 
-**Last Updated:** December 20, 2024  
-**Project:** Islamic Da'i Chatbot with Quran + Hadith RAG (Retrieval Augmented Generation)  
-**Status:** Production Ready - Phases 1-2 Complete
+**Last Updated:** Oct 2025
+**Project:** Criterion
 
 ---
 
@@ -29,7 +28,27 @@
 
 ## 🎯 System Overview
 
-**Criterion** is an AI-powered Islamic chatbot that serves as a **Da'i** (invitor to Islam), helping users understand Islam through authentic sources using natural language queries. The goal is to guide people to Islam with wisdom, compassion, empathy and truth, focusing on curious seekers asking questions about Islam and those interested in converting to Islam.
+### Mission First
+
+**Criterion** is an AI-powered Da'i (invitor to Islam) — a bridge between seekers and authentic Islamic knowledge. We exist to bring the teachings of Islam to anyone seeking truth, using modern technology to make divine guidance accessible to all of humanity.
+
+**This is not just a chatbot.** This is a platform for authentic Islamic guidance, built with a clear mission: to provide reliable knowledge with wisdom, compassion, and clarity — freely accessible to all, powered by state-of-the-art technology, for the sake of Allah alone.
+
+> 📖 **See [MISSION.md](MISSION.md) for our complete vision, values, and the deeper purpose behind Criterion.**
+
+### Our Four Pillars
+
+Every technical decision, every line of code, every feature serves these core pillars:
+
+1. **Truth & Authenticity** — We never compromise on accuracy. Every response is grounded in verified sources (Quran and Sahih Hadith). We cite real references, never fabricate, and build systems that prevent hallucination.
+
+2. **Fundamentals & Simplicity** — We focus on core Islamic teachings that unite, not divide. We avoid sectarian debates and controversial topics. We serve seekers and new Muslims with compassion and clarity.
+
+3. **For the Sake of God (Fi Sabilillah)** — Criterion will always be free. We seek no worldly gain or recognition. This is Sadaqah Jariyah (ongoing charity), built for the benefit of all humanity, seeking reward only from Allah.
+
+4. **State of the Art** — We leverage cutting-edge AI to make Islamic knowledge accessible through natural language. We innovate to unlock new possibilities for delivering guidance to the masses.
+
+### How the Technology Serves the Mission
 
 The system combines:
 
@@ -43,39 +62,58 @@ The system combines:
 
 ### Key Differentiators
 
+**Mission-Aligned:**
+
+- **Free Forever**: No monetization, no paywalls, no ads — built fi sabilillah (for the sake of Allah)
+- **Fundamentals-Focused**: Avoids sectarian debates and controversial topics — focuses on what unites
+- **Trust-First**: Grade-filtered hadiths (defaults to Sahih), verified sources only, no fabrication
+- **Seeker-Oriented**: Designed for curious minds, new Muslims, and students of knowledge
+- **Da'i Personality**: Compassionate, knowledgeable, humble guidance rooted in Quran and Sunnah
+
+**Technical Excellence:**
+
 - **Dual-Source Tool-Based RAG**: 6,236 Quran verses + 12,416 Hadiths with autonomous tool calling
 - **Contextual Retrieval**: Top 3 verses include ±2 surrounding context (never crosses Surah boundaries)
-- **Authentic**: Defaults to Sahih (most reliable) hadiths with grade filtering
+- **Authentic Sources**: Defaults to Sahih (most reliable) hadiths with grade filtering
 - **Accurate Citations**: All responses cite real sources with hyperlinks (Quran.com, Sunnah.com)
 - **Multilingual Reading**: English (fast, no JOIN) + Slovak (single JOIN, <200ms)
 - **Shareable URLs**: `/search?q=patience`, `/quran/2/255` with Open Graph metadata
-- **Da'i Personality**: Compassionate, knowledgeable, humble guidance focused on fundamentals
+- **Fast Performance**: <150ms for most queries, optimized with HNSW indexes
 
 ---
 
 ## 🎯 Project Goals
 
-### Primary Objectives
+### Mission Goals
 
-1. ✅ **Semantic Quran Search**: Users can ask natural language questions and get relevant verses
-2. ✅ **Semantic Hadith Search**: Users can search authentic Hadith with grade filtering
-3. ✅ **Contextual Understanding**: Include surrounding verses to prevent out-of-context interpretations
-4. ✅ **Accurate Citations**: Always provide proper Surah:Ayah references and Hadith references
+**Why we build:**
+
+1. ✅ **Build Trust Through Authenticity**: Every response must be verifiable, grounded in authentic sources, never fabricated
+2. ✅ **Serve Seekers & New Muslims**: Make Islam accessible to those exploring faith, asking sincere questions, or taking their first steps
+3. ✅ **Preserve Fundamentals**: Focus on core teachings from Quran and Sunnah that unite Muslims, avoid divisive topics
+4. ✅ **Remain Free & Accessible**: Never monetize, never gate knowledge, always available to all of humanity
+5. ✅ **Advance Da'wah Through Technology**: Use state-of-the-art tools to bring Islamic guidance to the masses
+
+### Technical Objectives
+
+**How we deliver the mission:**
+
+**Core Features (✅ Complete):**
+
+1. ✅ **Semantic Quran Search**: Natural language queries → relevant verses
+2. ✅ **Semantic Hadith Search**: Natural language queries → authentic Hadith with grade filtering
+3. ✅ **Contextual Understanding**: Top 3 verses include ±2 surrounding context (prevents out-of-context usage)
+4. ✅ **Accurate Citations**: Proper Surah:Ayah references + Hadith references with hyperlinks
 5. ✅ **Bilingual Support**: Arabic text + English translation for all verses and hadiths
-6. ✅ **Islamic Personality**: Da'i character - guiding, compassionate, knowledgeable
-7. ✅ **Multilingual Reading**: Slovak translation with language selector UI
-8. ✅ **Shareable URLs**: Search results and individual verses with Open Graph metadata
+6. ✅ **Da'i Personality**: Compassionate, knowledgeable AI character focused on guidance
+7. ✅ **Multilingual Reading**: English + Slovak (more languages planned)
+8. ✅ **Shareable URLs**: Search results (`/search?q=...`) and individual verses (`/quran/2/255`)
 
-### Secondary Objectives
-
-9. ✅ **Fast Performance**: <150ms English Quran queries, <200ms Slovak queries
-10. ✅ **Scalable**: Can handle multiple users simultaneously
-11. ✅ **Maintainable**: Clean code, well-documented, component-based architecture
-12. ✅ **Quality Responses**: Minimize hallucinations through tool-based RAG, always cite sources
-13. ✅ **Hadith Authenticity**: Default to Sahih-only hadiths with configurable grade filtering
-14. ✅ **Performance Monitoring**: Built-in timing utilities for tracking slow operations
+**Quality & Performance (✅ Complete):** 9. ✅ **Fast Performance**: <150ms English queries, <200ms translated queries 10. ✅ **Scalable Infrastructure**: Handles concurrent users with serverless architecture 11. ✅ **Clean Codebase**: Component-based architecture, well-documented, maintainable 12. ✅ **Hallucination Prevention**: Tool-based RAG ensures responses are always grounded 13. ✅ **Authenticity-First**: Defaults to Sahih-only hadiths, configurable grade filtering 14. ✅ **Performance Monitoring**: Built-in timing utilities for optimization
 
 ### Long-term Vision
+
+**Technical Evolution:**
 
 - **Phase 1**: Basic Quran RAG with context (✅ COMPLETE)
 - **Phase 2**: Hadith integration + Multilingual Quran + Shareable URLs (✅ COMPLETE)
@@ -83,6 +121,14 @@ The system combines:
 - **Phase 4**: Contextual chunk embeddings with LLM-generated context (📋 PLANNED)
 - **Phase 5**: Reranking for optimal result ordering (📋 OPTIONAL)
 - **Phase 6**: Tafsir (commentary) integration (📋 PLANNED)
+
+**Mission-Driven Expansion:**
+
+- **Community Phase** (📋 PLANNED): User feedback loops, scholar partnerships, community moderation
+- **Global Da'wah Phase** (📋 PLANNED): 10+ languages (Arabic, Urdu, French, Turkish, Malay, etc.), regional translations
+- **Educational Phase** (📋 PLANNED): Learning paths for new Muslims, guided courses, Shahadah support
+- **Preservation Phase** (📋 PLANNED): Open-source releases, community ownership, sustainable governance
+- **Accessibility Phase** (📋 PLANNED): Voice interfaces, offline modes, SMS/WhatsApp bots for regions with limited internet
 
 ---
 
@@ -859,6 +905,15 @@ getVerseBySurahAndAyah({ surahNumber, ayahNumber, language });
 ---
 
 ## 💻 Engineering Preferences & Style
+
+### Engineering Serves the Mission
+
+**Our engineering choices reflect our values.** We optimize for:
+
+- **Authenticity over speed** — Never sacrifice accuracy for performance. A slower, correct answer beats a fast hallucination.
+- **Accessibility over features** — Performance matters because users matter. Every second saved is a better experience for seekers.
+- **Sustainability over shortcuts** — We build for the long term. Clean code, good tests, and maintainability ensure Criterion serves humanity for years to come.
+- **Community over ego** — We document, we explain, we invite collaboration. This work belongs to Allah and benefits all.
 
 ### Core Principles (from your instructions)
 
