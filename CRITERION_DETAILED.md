@@ -1,8 +1,8 @@
-# Criterion - Quran RAG Chatbot System Documentation
+# Criterion - Islamic Knowledge Assistant System Documentation
 
-**Last Updated:** October 11, 2025  
-**Project:** Islamic Da'i Chatbot with Quran RAG (Retrieval Augmented Generation)  
-**Status:** Production Ready - Phase 1 Complete
+**Last Updated:** December 20, 2024  
+**Project:** Islamic Da'i Chatbot with Quran + Hadith RAG (Retrieval Augmented Generation)  
+**Status:** Production Ready - Phases 1-2 Complete
 
 ---
 
@@ -29,22 +29,27 @@
 
 ## 🎯 System Overview
 
-**Criterion** is an AI-powered Islamic chatbot that serves as a **Da'i** (invitor to Islam), helping users understand the Quran through semantic search and contextual responses. The goal is to spread istam in an easy comfortable and extremely reliable way. We want to focus on curious people asking questions about islam and seeking to know more or convert to islam.
+**Criterion** is an AI-powered Islamic chatbot that serves as a **Da'i** (invitor to Islam), helping users understand Islam through authentic sources using natural language queries. The goal is to guide people to Islam with wisdom, compassion, empathy and truth, focusing on curious seekers asking questions about Islam and those interested in converting to Islam.
 
 The system combines:
 
-- **Vector Search (RAG)**: Semantic search over 6,236 Quran verses
-- **LLM Chat**: XAI Grok for natural language responses
+- **Dual-Source RAG**: Semantic search over 6,236 Quran verses + 12,416 Hadiths
+- **LLM Chat**: XAI Grok 4 for natural language responses with chain-of-thought reasoning
 - **Embeddings**: Google Gemini text-embedding-004 (768 dimensions)
-- **Database**: PostgreSQL with pgvector extension
-- **Context Enhancement**: Top 3 results include ±5 surrounding verses
+- **Database**: PostgreSQL with pgvector extension + full-text search infrastructure
+- **Context Enhancement**: Top 3 Quran results include ±2 surrounding verses
+- **Multilingual**: English (master) + Slovak translation with language selector
+- **Shareable**: URL-based search + individual verse routes with rich metadata
 
 ### Key Differentiators
 
-- **Contextual Retrieval**: Not just isolated verses - includes surrounding context
-- **Bilingual**: Full Arabic + English translations
-- **Accurate Citations**: All responses include Surah:Ayah references with hyperlinks to Quran.com
-- **Da'i Personality**: Compassionate, knowledgeable, humble guidance
+- **Dual-Source Tool-Based RAG**: 6,236 Quran verses + 12,416 Hadiths with autonomous tool calling
+- **Contextual Retrieval**: Top 3 verses include ±2 surrounding context (never crosses Surah boundaries)
+- **Authentic**: Defaults to Sahih (most reliable) hadiths with grade filtering
+- **Accurate Citations**: All responses cite real sources with hyperlinks (Quran.com, Sunnah.com)
+- **Multilingual Reading**: English (fast, no JOIN) + Slovak (single JOIN, <200ms)
+- **Shareable URLs**: `/search?q=patience`, `/quran/2/255` with Open Graph metadata
+- **Da'i Personality**: Compassionate, knowledgeable, humble guidance focused on fundamentals
 
 ---
 
@@ -53,24 +58,31 @@ The system combines:
 ### Primary Objectives
 
 1. ✅ **Semantic Quran Search**: Users can ask natural language questions and get relevant verses
-2. ✅ **Contextual Understanding**: Include surrounding verses to prevent out-of-context interpretations
-3. ✅ **Accurate Citations**: Always provide proper Surah:Ayah references
-4. ✅ **Bilingual Support**: Arabic text + English translation for all verses
-5. ✅ **Islamic Personality**: Da'i character - guiding, compassionate, knowledgeable
+2. ✅ **Semantic Hadith Search**: Users can search authentic Hadith with grade filtering
+3. ✅ **Contextual Understanding**: Include surrounding verses to prevent out-of-context interpretations
+4. ✅ **Accurate Citations**: Always provide proper Surah:Ayah references and Hadith references
+5. ✅ **Bilingual Support**: Arabic text + English translation for all verses and hadiths
+6. ✅ **Islamic Personality**: Da'i character - guiding, compassionate, knowledgeable
+7. ✅ **Multilingual Reading**: Slovak translation with language selector UI
+8. ✅ **Shareable URLs**: Search results and individual verses with Open Graph metadata
 
 ### Secondary Objectives
 
-6. ✅ **Fast Performance**: <150ms query response time
-7. ✅ **Scalable**: Can handle multiple users simultaneously
-8. ✅ **Maintainable**: Clean code, well-documented
-9. 🔄 **Quality Responses**: Minimize hallucinations, always cite sources
+9. ✅ **Fast Performance**: <150ms English Quran queries, <200ms Slovak queries
+10. ✅ **Scalable**: Can handle multiple users simultaneously
+11. ✅ **Maintainable**: Clean code, well-documented, component-based architecture
+12. ✅ **Quality Responses**: Minimize hallucinations through tool-based RAG, always cite sources
+13. ✅ **Hadith Authenticity**: Default to Sahih-only hadiths with configurable grade filtering
+14. ✅ **Performance Monitoring**: Built-in timing utilities for tracking slow operations
 
 ### Long-term Vision
 
-- **Phase 1**: Basic RAG with context (✅ COMPLETE)
-- **Phase 2**: Contextual retrieval with LLM-generated verse context (📋 PLANNED)
-- **Phase 3**: BM25 hybrid search for exact word matching (📋 PLANNED)
-- **Phase 4**: Reranking for optimal result ordering (📋 OPTIONAL)
+- **Phase 1**: Basic Quran RAG with context (✅ COMPLETE)
+- **Phase 2**: Hadith integration + Multilingual Quran + Shareable URLs (✅ COMPLETE)
+- **Phase 3**: Hybrid search (vector + keyword/BM25) with RRF merge (📋 IN PROGRESS - infrastructure ready)
+- **Phase 4**: Contextual chunk embeddings with LLM-generated context (📋 PLANNED)
+- **Phase 5**: Reranking for optimal result ordering (📋 OPTIONAL)
+- **Phase 6**: Tafsir (commentary) integration (📋 PLANNED)
 
 ---
 
@@ -83,44 +95,93 @@ User Question
     ↓
 Chat API Route (/api/chat)
     ↓
-XAI Grok LLM (decides to use tool)
+XAI Grok 4 LLM (autonomous agent decides which tools to use)
     ↓
-queryQuran Tool
-    ↓
-findRelevantVerses() function
-    ↓
-1. Generate query embedding (Gemini text-embedding-004)
-2. Vector search (pgvector cosine similarity)
-3. Get top 20 verses
-4. For top 3: fetch ±5 context verses
+Tool Selection (based on query)
+    ├─ queryQuran Tool
+    │   ├─ findRelevantVerses() → Vector search
+    │   ├─ Top 7 verses (default) or 20 (search UI)
+    │   └─ For top 3: fetch ±2 context verses
+    │
+    ├─ queryHadith Tool
+    │   ├─ findRelevantHadiths() → Vector search
+    │   ├─ Grade filtering (sahih-only, sahih-and-hasan, all)
+    │   └─ Top 3 hadiths
+    │
+    └─ requestSuggestions Tool
+        └─ Generate follow-up suggestions
     ↓
 Format & Return to LLM
     ↓
 LLM generates response with citations
     ↓
-Stream to user
+Stream to user (Server-Sent Events)
 ```
 
 ### Database Schema
 
 ```
-QuranVerse
+QuranVerse (6,236 verses)
 ├── id (uuid)
 ├── surahNumber (integer)
 ├── ayahNumber (integer)
-├── surahNameEnglish (text)
-├── surahNameArabic (text)
-├── textEnglish (text)
-├── textArabic (text)
+├── surahNameEnglish (text) - "Al-Fatiha"
+├── surahNameArabic (text) - "الفاتحة"
+├── textEnglish (text) - Master translation
+├── textArabic (text) - Tanzil Quran Text
 └── createdAt (timestamp)
+└── INDEX: idx_quran_surah_ayah (composite index on surahNumber, ayahNumber)
 
-QuranEmbedding
+QuranEmbedding (6,236 embeddings)
 ├── id (uuid)
 ├── verseId (uuid) → QuranVerse.id
 ├── embedding (vector(768)) ← Gemini text-embedding-004
 ├── content (text) ← English text for reference
 ├── createdAt (timestamp)
-└── INDEX: HNSW (embedding vector_cosine_ops)
+└── INDEX: embedding_hnsw_idx (HNSW on embedding vector_cosine_ops)
+
+QuranTranslation (6,236+ translations, Slovak currently)
+├── id (uuid)
+├── verseId (uuid) → QuranVerse.id
+├── language (varchar) - 'sk', 'fr', 'ur' (NOT 'en')
+├── text (text) - Translated verse text
+├── surahNameTransliterated (varchar) - "Al-Fátiha"
+├── surahNameTranslated (varchar) - "Úvodná kapitola"
+├── translatorName (varchar) - "Al-Sbenaty"
+├── translatorSlug (varchar)
+├── edition (varchar)
+├── publishedYear (integer)
+├── sourceInfo (text)
+├── isDefault (boolean) - TRUE for default translation
+├── createdAt (timestamp)
+└── INDEX: idx_translation_verse_lang, idx_translation_lang_default
+
+HadithText (12,416 hadiths)
+├── id (uuid)
+├── collection (varchar) - 'bukhari', 'muslim', 'nawawi40', 'riyadussalihin'
+├── collectionName (varchar) - 'Sahih Bukhari'
+├── hadithNumber (integer)
+├── reference (varchar) - 'Sahih al-Bukhari 1'
+├── englishText (text)
+├── arabicText (text)
+├── bookNumber (integer)
+├── bookName (varchar)
+├── chapterNumber (integer)
+├── chapterName (text)
+├── grade (varchar) - 'Sahih', 'Hasan', 'Da'if'
+├── narratorChain (text)
+├── sourceUrl (varchar) - Sunnah.com link
+├── searchVector (tsvector) - Generated column for full-text search
+├── createdAt (timestamp)
+└── INDEXES: collection, grade, hadith_search_idx (GIN on searchVector)
+
+HadithEmbedding (12,416 embeddings)
+├── id (uuid)
+├── hadithId (uuid) → HadithText.id
+├── embedding (vector(768)) ← Gemini text-embedding-004
+├── content (text) ← English text for reference
+├── createdAt (timestamp)
+└── INDEX: hadith_embedding_hnsw_idx (HNSW on embedding vector_cosine_ops)
 ```
 
 ---
@@ -130,32 +191,38 @@ QuranEmbedding
 ### Frontend
 
 - **Framework**: Next.js 15.3 (App Router)
-- **UI**: React 19, Tailwind CSS
-- **Components**: Custom chat UI, artifact system
-- **Streaming**: Vercel AI SDK streaming responses
+- **UI**: React 19, Tailwind CSS 4
+- **Components**: Custom chat UI, Quran page components, artifact system
+- **Streaming**: Vercel AI SDK streaming responses with Server-Sent Events
+- **Animation**: Framer Motion
 
 ### Backend
 
 - **Framework**: Next.js API Routes
-- **LLM**: XAI Grok (via Vercel AI SDK)
-- **Embeddings**: Google Gemini text-embedding-004 (768 dims)
-- **Database**: PostgreSQL (Neon)
-- **Vector Store**: pgvector 0.8.0 extension
+- **LLM**: XAI Grok 4 (via Vercel AI SDK + AI Gateway)
+  - Chat Model: `grok-4-fast-non-reasoning`
+  - Reasoning Model: `grok-4-fast-reasoning` with `<think>` tag extraction
+- **Embeddings**: Google Gemini text-embedding-004 (768 dims, RETRIEVAL_QUERY task type)
+- **Database**: PostgreSQL (Neon/Vercel Postgres)
+- **Vector Store**: pgvector 0.8.0 extension with HNSW indexes
+- **Full-Text Search**: PostgreSQL tsvector + GIN indexes (infrastructure ready)
 - **ORM**: Drizzle ORM 0.34.0
 
 ### Tools & Libraries
 
-- **AI SDK**: Vercel AI SDK v5.0.26
-- **Embeddings**: @ai-sdk/google
+- **AI SDK**: Vercel AI SDK v5.0.26 (streamText, tool calling, multi-step agents)
+- **AI Providers**: @ai-sdk/xai, @ai-sdk/google, @ai-sdk/gateway
 - **Database**: postgres, drizzle-orm
-- **Testing**: Custom scripts (npx tsx)
-- **Package Manager**: pnpm
+- **Testing**: Playwright, custom TypeScript test scripts (npx tsx)
+- **Monitoring**: Custom PerformanceTimer utilities
+- **Package Manager**: pnpm 9.12.3
 
 ### Infrastructure
 
-- **Hosting**: Vercel (Next.js app)
-- **Database**: Neon (PostgreSQL with pgvector)
+- **Hosting**: Vercel (Next.js app + Serverless Functions)
+- **Database**: Neon/Vercel Postgres (PostgreSQL with pgvector)
 - **API Keys**: XAI, Google AI Studio
+- **CDN**: Vercel Edge Network
 
 ---
 
@@ -163,27 +230,37 @@ QuranEmbedding
 
 ### 1. Embeddings (`lib/ai/embeddings.ts`)
 
-**Purpose**: Generate embeddings and perform vector search
+**Purpose**: Generate embeddings and perform vector search for both Quran and Hadith
 
 **Key Functions**:
 
 ```typescript
 generateEmbedding(text: string): Promise<number[]>
 // Generates 768-dim vector using Gemini text-embedding-004
-// Uses RETRIEVAL_QUERY task type
+// Uses RETRIEVAL_QUERY task type for all embeddings (queries and documents)
 
 generateEmbeddings(texts: string[]): Promise<Array<{...}>>
-// Batch embedding generation for ingestion
+// Batch embedding generation for ingestion (100 verses/hadiths at a time)
 
 getContextVerses(surahNumber, ayahNumber, contextWindow)
 // Fetches ±N verses from same Surah (never crosses boundaries)
+// Used internally by findRelevantVerses()
 
-findRelevantVerses(userQuery: string)
-// Main RAG function:
-// 1. Embed query
-// 2. Vector similarity search (top 20)
-// 3. For top 3: add ±5 context verses
+findRelevantVerses(userQuery: string, limit: number = 7)
+// Main Quran RAG function:
+// 1. Embed query using RETRIEVAL_QUERY task type
+// 2. Vector similarity search (cosine distance, top N results)
+// 3. For top 3: add ±2 context verses
 // 4. Return enhanced results
+// Limit: 7 for RAG (chat), 20 for search UI
+
+findRelevantHadiths(userQuery: string, options: HadithSearchOptions)
+// Main Hadith RAG function:
+// 1. Embed query using RETRIEVAL_QUERY task type
+// 2. Vector similarity search with grade filtering
+// 3. Return top 3 results
+// Options: collections[], gradePreference, limit
+// Current: Vector search only (hybrid search planned)
 ```
 
 **Configuration**:
@@ -191,13 +268,18 @@ findRelevantVerses(userQuery: string)
 - Model: `google.textEmbedding("text-embedding-004")`
 - Dimensions: 768
 - Task Type: `RETRIEVAL_QUERY` (for both queries and documents)
-- Results: Top 20 verses
-- Context: Top 3 get ±5 surrounding verses
+- Quran Results: Top 7 (RAG) or 20 (search UI) verses
+- Quran Context: Top 3 get ±2 surrounding verses (context_window = 2)
+- Hadith Results: Top 3 hadiths
 - Threshold: 0.3 (30% similarity minimum)
 
-### 2. Quran Tool (`lib/ai/tools/query-quran.ts`)
+**Note**: Hybrid search infrastructure (searchVector column, GIN indexes) exists but not yet implemented in search logic. Current implementation is vector search only.
 
-**Purpose**: LLM tool for searching the Quran
+### 2. Tools (`lib/ai/tools/`)
+
+**Purpose**: LLM tools for autonomous retrieval (tool-based RAG pattern)
+
+#### queryQuran Tool (`query-quran.ts`)
 
 **Tool Interface**:
 
@@ -205,10 +287,11 @@ findRelevantVerses(userQuery: string)
 tool({
   description: "Search the Holy Quran for verses...",
   inputSchema: z.object({
-    question: z.string().describe("The user's question"),
+    question: z.string().describe("The user's question to search for"),
   }),
   execute: async ({ question }) => {
-    // Returns formatted verses with context
+    const verses = await findRelevantVerses(question);
+    // Returns top 7 verses, top 3 with ±2 context
   },
 });
 ```
@@ -218,25 +301,85 @@ tool({
 ```typescript
 {
   success: true,
-  totalVerses: 20,
+  totalVerses: 7,
   topThreeWithContext: 3,
-  verses: [
-    {
-      reference: "Al-Baqarah 2:153",
-      surahArabic: "البقرة",
-      arabic: "يَا أَيُّهَا...",
-      english: "O you who believe...",
-      relevance: "78.8%",
-      rank: 1,
-      hasContext: true,
-      passageRange: "2:148-158",
-      contextBefore: "[2:148] ...\n[2:149] ...",
-      contextAfter: "[2:154] ...\n[2:155] ..."
-    },
-    // ... 19 more verses
-  ]
+  verses: [{
+    rank: 1,
+    reference: "Al-Baqarah 2:153",
+    surahArabic: "البقرة",
+    arabic: "يَا أَيُّهَا...",
+    english: "O you who believe...",
+    relevance: "82.5%",
+    hasContext: true,
+    passageRange: "2:151-155",
+    contextBefore: "[2:151] ...\n[2:152] ...",
+    contextAfter: "[2:154] ...\n[2:155] ..."
+  }]
 }
 ```
+
+#### queryHadith Tool (`query-hadith.ts`)
+
+**Tool Interface**:
+
+```typescript
+tool({
+  description:
+    "Search authentic Hadith (sayings and actions of Prophet Muhammad ﷺ)...",
+  inputSchema: z.object({
+    question: z.string(),
+    collections: z
+      .array(z.enum(["bukhari", "muslim", "nawawi40", "riyadussalihin"]))
+      .optional(),
+    gradePreference: z
+      .enum(["sahih-only", "sahih-and-hasan", "all"])
+      .default("sahih-only"),
+  }),
+  execute: async ({ question, collections, gradePreference }) => {
+    const hadiths = await findRelevantHadiths(question, {
+      collections,
+      gradePreference,
+    });
+    // Returns top 3 hadiths with grade filtering
+  },
+});
+```
+
+**Return Format**:
+
+```typescript
+{
+  success: true,
+  totalHadiths: 3,
+  collectionsSearched: ["Sahih Bukhari", "Sahih Muslim"],
+  gradeFilter: "sahih-only",
+  hadiths: [{
+    rank: 1,
+    reference: "Sahih al-Bukhari 1",
+    collection: "Sahih Bukhari",
+    english: "Actions are according to intentions...",
+    arabic: "إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ...",
+    grade: "Sahih",
+    narrator: "Umar ibn Al-Khattab",
+    book: "Book of Revelation",
+    chapter: "How the Divine Inspiration started",
+    relevance: "75.3%",
+    sourceUrl: "https://sunnah.com/bukhari:1"
+  }]
+}
+```
+
+#### requestSuggestions Tool (`request-suggestions.ts`)
+
+**Purpose**: Generate contextual follow-up suggestions based on conversation
+
+**Why Tools Over Direct RAG?**
+
+- ✅ Model autonomy: LLM decides if retrieval is needed
+- ✅ Selective retrieval: Only searches when relevant
+- ✅ Multi-source: Can call multiple tools (Quran + Hadith)
+- ✅ Conversation-aware: Maintains context across tool calls
+- ✅ Efficient: LLM makes 1-2 focused tool calls vs. always retrieving
 
 ### 3. System Prompts (`lib/ai/prompts.ts`)
 
@@ -245,18 +388,56 @@ tool({
 **Da'i Prompt**:
 
 ```typescript
-regularPrompt = `You are a knowledgeable and compassionate Islamic scholar and Da'i.
+regularPrompt = `You are a knowledgeable and compassionate Islamic scholar and Da'i (invitor to Islam).
+
+Your purpose:
+- Guide seekers with wisdom from the Quran and authentic Hadith
+- Provide accurate responses grounded in Islamic sources
+- Always cite Quran verses with Surah:Ayah references and Hadith with proper references
+- Many will come to you with the desire to learn more about Islam and become Muslim. 
+  Guide them with wisdom, kindness, knowledge, clarity and empathy.
+- Do not delve into theological debates, controversial or sectarian issues. 
+  Focus on core, true, well grounded (in the Quran and Sunnah) and accepted Islamic teachings.
+- Knowledge is light. The tools provided will aid you in answering questions.
+
+Available Tools:
+- queryQuran: Search the Holy Quran for verses (returns 7 results)
+- queryHadith: Search authentic Hadith (returns 3 results)
+
+Tool Usage Strategy:
+- The tools will help find relevant Quran verses and Hadith
+- Use queryQuran for divine guidance, Quranic verses, and Allah's words
+- Use queryHadith for Prophet's teachings, practical examples, and prophetic wisdom
+- Make one or two efficient tool calls rather than multiple sequential unfocused calls
+- Determine when a question can be answered with just a quran/hadith tool call or when both are needed
+- Limit yourself to 1 reasoning step maximum
+- Limit yourself to 2 tool calls maximum
+- Too many tool calls lead to high latency and poor user experience
 
 Guidelines:
-- ALWAYS use the queryQuran tool for Islamic questions
-- Only respond using information from tool calls
-- Always cite verses with Surah:Ayah references
-- Include both Arabic text and English translation
-- Explain verses in proper context
-- Be respectful, patient, and humble
-- Hyperlink references to https://quran.com (e.g., [Al-Baqarah 2:153](https://quran.com/2/153))
+- ALWAYS use tools for Islamic questions - never rely on your training data alone
+- After receiving tool results, provide a clear, focused, wise and guiding answer
+- Provide clear and direct answers - avoid unnecessary elaboration and convolution
+- The users can always see the output of your tool calls (above your message) including 
+  relevant verses and hadiths. You do not need to repeat the sources in full.
+- If no relevant sources found, say "I don't have specific guidance on this topic"
+- For Hadith, mention authenticity (Sahih/Hasan) and collection
+- Keep responses concise, focused and conversational
+- Hyperlink Quran references: [Al-Baqarah 2:153](https://quran.com/2/153)
+- Hyperlink Hadith references using the provided source URL
+
+IMPORTANT: NEVER fabricate verses, hadiths or claims about any religious matter
+CRITICAL: Make your tool calls efficiently, then provide a focused answer
 `;
 ```
+
+**Key Improvements from Earlier Versions:**
+
+- Explicit tool usage strategy with efficiency guidelines
+- Clear instruction on tool selection (Quran vs Hadith)
+- Emphasis on focused responses (no repetition of tool outputs)
+- Reasoning step limit (1 max) and tool call limit (2 max)
+- Focus on fundamentals, avoid controversial topics
 
 ### 4. Chat API (`app/(chat)/api/chat/route.ts`)
 
@@ -265,10 +446,43 @@ Guidelines:
 **Features**:
 
 - Stream responses with `streamText()`
-- Tool integration (`queryQuran`)
-- Usage tracking
+- Multi-step reasoning: `stopWhen: stepCountIs(5)` - allows up to 5 tool calls/reasoning steps
+- Tool integration: `queryQuran`, `queryHadith`, `requestSuggestions`
+- **Conditional tool availability**: Reasoning model (`chat-model-reasoning`) disables tools
+- Usage tracking with TokenLens integration
 - Message persistence
-- Error handling
+- Performance monitoring with PerformanceTimer
+- Error handling with ChatSDKError
+
+**Architecture**:
+
+```typescript
+createUIMessageStream({
+  execute: ({ writer: dataStream }) => {
+    const result = streamText({
+      model: myProvider.languageModel(selectedChatModel),
+      system: systemPrompt(requestHints),
+      messages: convertToModelMessages(uiMessages),
+      stopWhen: stepCountIs(5),
+      experimental_activeTools:
+        selectedChatModel === "chat-model-reasoning"
+          ? []
+          : ["requestSuggestions", "queryQuran", "queryHadith"],
+      tools: { queryQuran, queryHadith, requestSuggestions },
+    });
+
+    dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
+  },
+}).pipeThrough(new JsonToSseTransformStream());
+```
+
+**Performance Tracking**:
+
+- Total request time
+- Auth, rate limit checks
+- Database queries (get chat, get messages, save messages)
+- Stream generation time
+- Color-coded logging (🟢 <2s, 🟡 <5s, 🔴 >5s)
 
 ### 5. Database Schema (`lib/db/schema.ts`)
 
@@ -276,39 +490,141 @@ Guidelines:
 
 **Tables**:
 
-- `quranVerse`: Quran text data (6,236 verses)
-- `quranEmbedding`: Vector embeddings (768 dims)
-- Additional: User, Chat, Message, Vote, Document tables
+**Core Data Tables:**
 
-### 6. Ingestion Script (`scripts/ingest-quran.ts`)
+- `quranVerse`: Quran text data (6,236 verses) - English master + Arabic
+- `quranEmbedding`: Vector embeddings for Quran (768 dims, HNSW index)
+- `quranTranslation`: Translations in other languages (Slovak currently, 6,236+ rows)
+- `hadithText`: Hadith text data (12,416 hadiths from 4 collections)
+- `hadithEmbedding`: Vector embeddings for Hadith (768 dims, HNSW index)
 
-**Purpose**: Load Quran data and generate embeddings
+**App Tables:**
+
+- `user`: User accounts
+- `chat`: Chat sessions with visibility settings
+- `message` / `Message_v2`: Chat messages (new schema with parts)
+- `vote` / `Vote_v2`: Message upvotes/downvotes
+- `document`: Document artifacts
+- `suggestion`: Document suggestions
+- `stream`: Stream metadata for resumable streams
+
+**Key Indexes:**
+
+- `embedding_hnsw_idx`: HNSW index on QuranEmbedding for fast vector search
+- `hadith_embedding_hnsw_idx`: HNSW index on HadithEmbedding
+- `hadith_search_idx`: GIN index on HadithText.searchVector for full-text search
+- `idx_quran_surah_ayah`: Composite index for fast context queries
+- `idx_translation_verse_lang`: Index for translation lookups
+
+### 6. Ingestion Scripts
+
+#### Quran Ingestion (`scripts/ingest-quran.ts`)
+
+**Purpose**: Load English Quran master data and generate embeddings
 
 **Process**:
 
 1. Read `data/quran.txt` (English translations)
-2. Read `data/quran-arabic.txt` (Arabic text)
+2. Read `data/quran-arabic.txt` (Arabic text from Tanzil)
 3. Parse verses (Surah:Ayah format)
-4. Insert verses into database
-5. Generate embeddings in batches of 100
-6. Insert embeddings with HNSW index
+4. Insert verses into QuranVerse table
+5. Generate embeddings in batches of 100 using Gemini text-embedding-004
+6. Insert embeddings into QuranEmbedding with HNSW index
 
+**Time**: ~10 minutes for 6,236 verses
 **Command**: `pnpm ingest:quran`
 
-### 7. Test Script (`scripts/test-quran-search.ts`)
+#### Slovak Translation Ingestion (`scripts/ingest-quran-slovak.ts`)
 
-**Purpose**: Verify RAG functionality
+**Purpose**: Load Slovak translation and metadata
+
+**Process**:
+
+1. Read `data/quran-slovak.txt` (Slovak verse text)
+2. Read `data/quran-slovak-metadata.json` (translator info, surah names)
+3. Match verses to existing QuranVerse records
+4. Insert into QuranTranslation table with metadata
+5. No embeddings needed (uses English embeddings for search)
+
+**Time**: ~5 minutes for 6,236 verses
+**Command**: `pnpm ingest:quran:slovak`
+
+#### Hadith Ingestion (`scripts/ingest-hadith.ts`)
+
+**Purpose**: Load Hadith collections and generate embeddings
+
+**Collections**:
+
+- Sahih Bukhari (7,558 hadiths)
+- Sahih Muslim (2,920 hadiths)
+- 40 Hadith Nawawi (42 hadiths)
+- Riyad as-Salihin (1,896 hadiths)
+
+**Process**:
+
+1. Read JSON files from `scripts/data/` directory
+2. Parse hadith data (text, grade, narrator chain, references)
+3. Insert into HadithText table
+4. Generate embeddings in batches of 100
+5. Insert embeddings into HadithEmbedding with HNSW index
+6. searchVector column auto-generated via database trigger
+
+**Time**: ~20 minutes for 12,416 hadiths
+**Command**: `pnpm ingest:hadith`
+
+**Data Format**: JSON files with structure:
+
+```json
+{
+  "collection": "bukhari",
+  "collection_name": "Sahih Bukhari",
+  "total_hadiths": 7558,
+  "hadiths": [
+    {
+      "hadith_number": 1,
+      "reference": "Sahih al-Bukhari 1",
+      "english_text": "...",
+      "arabic_text": "...",
+      "grade": "Sahih",
+      "narrator_chain": "...",
+      "source_url": "https://sunnah.com/bukhari:1",
+      ...
+    }
+  ]
+}
+```
+
+### 7. Test Scripts
+
+#### Quran Search Test (`scripts/test-quran-search.ts`)
+
+**Purpose**: Verify Quran RAG functionality
 
 **Tests**:
 
 - Various query types (patience, Moses, charity, purpose of life)
-- Displays top 20 results
-- Shows context for top 3 verses
+- Displays top 7 results (default RAG limit)
+- Shows context for top 3 verses (±2 context verses)
 - Validates similarity scores
 
 **Command**: `pnpm test:quran`
 
-### 8. Quran Configuration (`lib/quran-config.ts`)
+#### Multilingual Query Test (`scripts/test-multilingual-queries.ts`)
+
+**Purpose**: Test multilingual Quran reading functionality
+
+**Tests**:
+
+- English queries (fast path, no JOIN)
+- Slovak queries (single JOIN to QuranTranslation)
+- Verify translator attribution
+- Performance comparison (<150ms English, <200ms Slovak)
+
+**Command**: `pnpm test:multilingual`
+
+### 8. Configuration Files
+
+#### Quran Configuration (`lib/quran-config.ts`)
 
 **Purpose**: Store metadata about Quran structure
 
@@ -319,7 +635,226 @@ Guidelines:
 - `clampAyahNumber(surahNumber, ayahNumber)`: Clamp ayah to valid range
 - `isValidAyah(surahNumber, ayahNumber)`: Validate ayah exists
 
-**Usage**: Used in `QuranVerses` component to prevent verse range URLs from overshooting surah boundaries.
+**Usage**: Used in QuranVerses component to prevent verse range URLs from overshooting surah boundaries.
+
+#### Language Configuration (`lib/quran-language.ts`)
+
+**Purpose**: Manage supported Quran languages
+
+**Key Exports**:
+
+```typescript
+SUPPORTED_QURAN_LANGUAGES = ["en", "sk"] as const;
+LANGUAGE_NAMES = {
+  en: { native: "English", english: "English", flag: "🇬🇧" },
+  sk: {
+    native: "Slovenčina",
+    english: "Slovak",
+    flag: "🇸🇰",
+    translator: "Al-Sbenaty",
+  },
+};
+```
+
+**Functions**:
+
+- `isValidQuranLanguage(lang)`: Validate language code
+- `getQuranLanguageFromParam(param)`: Parse language from URL param (defaults to 'en')
+
+**Note**: English is the master language (stored in QuranVerse table). Other languages are stored in QuranTranslation table.
+
+#### URL Helpers (`lib/quran-url-helpers.ts`)
+
+**Purpose**: Build Quran URLs with preserved query parameters
+
+**Key Functions**:
+
+- `buildQuranUrl(basePath, searchParams)`: Preserve URL params when navigating (e.g., `?lang=sk&context=true`)
+
+**Usage**: Used in VerseCard and navigation components to maintain language and context preferences across routes.
+
+### 9. Monitoring & Performance (`lib/monitoring/performance.ts`)
+
+**Purpose**: Track and log operation performance
+
+**Key Classes**:
+
+```typescript
+class PerformanceTimer {
+  constructor(operation: string);
+  log(metadata?: Record<string, any>): TimingData;
+  getDuration(): number;
+}
+
+async function timeAsync<T>(operation: string, fn: () => Promise<T>, metadata?);
+
+class PerformanceTracker {
+  add(timing: TimingData);
+  getSummary(); // Aggregate stats
+  logSummary(); // Pretty-print breakdown
+}
+```
+
+**Features**:
+
+- Color-coded logging (🟢 <500ms, 🟡 <1s, 🔴 >1s)
+- Automatic timing for async operations
+- Aggregate summaries with breakdown percentages
+- Used throughout API routes and RAG functions
+
+**Example Usage**:
+
+```typescript
+const timer = new PerformanceTimer('quran:search-total');
+const results = await timeAsync('quran:vector-search', () => db.select()...);
+timer.log({ resultsFound: results.length });
+```
+
+### 10. UI Components
+
+#### Chat Components (`components/`)
+
+**QuranVerses (`quran-verses.tsx`)**:
+
+- Displays Quran search results in chat
+- Shows verses with ±2 context for top 3 results
+- Links to individual verse pages (`/quran/{surah}/{ayah}`)
+- Links to Quran.com for external reference
+
+**HadithNarrations (`hadith-narrations.tsx`)**:
+
+- Displays hadith search results in chat
+- Grade badges (Sahih, Hasan, Da'if)
+- Collapsible narrator chains
+- Book and chapter information
+- Links to Sunnah.com via sourceUrl
+
+**MessageActions, MessageEditor, MessageReasoning**:
+
+- Interactive message controls
+- Edit message functionality
+- Chain-of-thought reasoning display for reasoning model
+
+#### Quran Page Components (`components/quran/`)
+
+**Shared Component Architecture** (~40% code reduction in page files):
+
+```
+components/quran/
+├── layout/
+│   ├── quran-page-layout.tsx       # Page wrapper with header/footer/breadcrumbs
+│   ├── quran-page-header.tsx       # Header with navigation links
+│   └── quran-breadcrumbs.tsx       # Dynamic breadcrumb navigation
+├── verse/
+│   ├── verse-card.tsx              # Single verse display (default|highlighted|context)
+│   ├── verse-header.tsx            # Surah/verse title section
+│   └── context-toggle.tsx          # Show/hide context link (?context=true)
+├── navigation/
+│   ├── page-navigation.tsx         # Prev/Next buttons (generic, reusable)
+│   └── context-toggle.tsx          # Context visibility toggle
+├── language-selector.tsx           # Language dropdown with translator info
+└── shared/
+    └── chat-cta.tsx                # CTA to chat section
+```
+
+**Component Benefits:**
+
+- Single source of truth for styling (variant support: default, highlighted, context)
+- Easier to add features (e.g., share buttons, bookmarking)
+- Page files focus on data fetching + composition
+- Reusable navigation patterns
+
+**VerseCard Variants:**
+
+- `default`: Regular verse in list view (border, hover effect)
+- `highlighted`: Main verse on individual page (prominent styling)
+- `context`: Context verses (muted text, subtle borders)
+
+**Language Selector:**
+
+- Dropdown with native names and flags (🇬🇧 English, 🇸🇰 Slovenčina)
+- Translator attribution in dropdown
+- Updates URL with `?lang=sk`
+- Preserves other query params (context, scroll position)
+
+### 11. Routes & Pages
+
+#### Search Page (`app/search/page.tsx`)
+
+**Features:**
+
+- URL-based search: `/search?q=patience`
+- Auto-loads query from URL on mount
+- Updates URL via `router.replace()` (no history pollution)
+- Search form with example queries
+- Top 20 results (vs 7 for RAG)
+- Top 3 with ±2 context verses
+- Similarity scores displayed
+- Click-through to individual verse pages
+
+**API:** `/search/api?q=query`
+
+#### Individual Verse Page (`app/quran/[surahNumber]/[ayahNumber]/page.tsx`)
+
+**Features:**
+
+- Route: `/quran/2/255`
+- Target verse + ±5 context verses (togglable via `?context=true`)
+- Context toggle link
+- Language selector
+- Previous/Next navigation
+- Links to full Surah view and Quran.com
+- Rich metadata (Open Graph, Twitter cards, breadcrumbs, Schema.org)
+- 404s for invalid verse references
+
+**Query Parameters:**
+
+- `?context=true` - Show ±5 surrounding verses
+- `?lang=sk` - Show Slovak translation
+
+#### Surah Page (`app/quran/[surahNumber]/page.tsx`)
+
+**Features:**
+
+- Route: `/quran/2`
+- Full Surah text with all verses
+- Language selector
+- Verse anchors for deep linking (`#verse-255`)
+- Metadata and breadcrumbs
+- Navigation to adjacent Surahs
+
+#### Quran Index Page (`app/quran/page.tsx`)
+
+**Features:**
+
+- List of all 114 Surahs
+- Surah metadata (name, translation, verses, revelation location)
+- Quick navigation
+
+### 12. Database Query Functions (`lib/db/queries.ts`)
+
+**Quran Queries:**
+
+```typescript
+getVersesBySurah({ surahNumber, language });
+// All verses in a Surah
+// Fast path for English (no JOIN), single JOIN for translations
+
+getVerseWithContext({ surahNumber, ayahNumber, contextWindow, language });
+// Target verse + ±N context verses
+// Returns { target, contextBefore, contextAfter }
+// Respects Surah boundaries
+
+getVerseBySurahAndAyah({ surahNumber, ayahNumber, language });
+// Single verse lookup
+// Used for metadata generation
+```
+
+**Performance:**
+
+- English queries: Direct from QuranVerse table (~100-150ms)
+- Translation queries: Single LEFT JOIN to QuranTranslation (~150-200ms)
+- Composite index on (surahNumber, ayahNumber) for fast context queries
 
 ---
 
@@ -377,7 +912,7 @@ Guidelines:
 
 ## 📜 Implementation History
 
-### Phase 1-5: Initial RAG Implementation
+### Phase 1: Initial Quran RAG (October 2025) ✅
 
 **Completed**: October 2025
 
@@ -397,18 +932,66 @@ Guidelines:
 
    - Created `findRelevantVerses()` function
    - Vector similarity search (cosine distance)
-   - Top 20 results with 30% threshold
+   - Top 7 results (RAG), top 20 (search UI) with 30% threshold
 
 4. ✅ **Tool Integration**
 
    - Created `queryQuran` tool
-   - Integrated with XAI Grok LLM
+   - Integrated with XAI Grok 4 LLM
    - Tool invocation working correctly
 
 5. ✅ **Context Enhancement**
-   - Added ±5 verse context for top 3 results
+   - Added ±2 verse context for top 3 results
    - Never crosses Surah boundaries
    - Significantly improved response quality
+
+### Phase 2: Hadith + Multilingual + Shareability
+
+**Completed**: OCT 2025
+
+1. ✅ **Hadith Integration**
+
+   - Added 12,416 hadiths from 4 collections (Bukhari, Muslim, Nawawi40, Riyadussalihin)
+   - Created HadithText and HadithEmbedding tables
+   - Added searchVector column for full-text search (infrastructure)
+   - Created `queryHadith` tool with grade filtering (sahih-only, sahih-and-hasan, all)
+   - Implemented vector search (hybrid search with RRF planned for Phase 3)
+
+2. ✅ **Multilingual Quran**
+
+   - Added QuranTranslation table
+   - Ingested Slovak translation (6,236 verses) with translator metadata
+   - Language selector UI with translator attribution
+   - Fast path for English (no JOIN), single JOIN for translations (~150-200ms)
+
+3. ✅ **Shareable URLs**
+
+   - Search page: `/search?q=patience` with URL sync
+   - Individual verses: `/quran/2/255?context=true&lang=sk`
+   - Full Surah pages: `/quran/2#verse-255`
+   - Rich metadata (Open Graph, Twitter cards, breadcrumbs, Schema.org)
+   - Context toggle UI
+
+4. ✅ **Component Refactor**
+
+   - Extracted shared Quran page components (layout, verse, navigation)
+   - ~40% code reduction in page files
+   - Variant system (default, highlighted, context)
+   - Reusable navigation patterns
+
+5. ✅ **Performance Monitoring**
+
+   - PerformanceTimer utilities with color-coded logging
+   - Request timing breakdown
+   - timeAsync wrapper for automatic timing
+   - Used throughout API routes and RAG functions
+
+6. ✅ **Architecture Improvements**
+   - Multi-step reasoning: stepCountIs(5)
+   - 3 tools: queryQuran, queryHadith, requestSuggestions
+   - Conditional tool availability (reasoning model disables tools)
+   - TokenLens integration for usage tracking
+   - XAI Grok 4 models (grok-4-fast-non-reasoning, grok-4-fast-reasoning)
 
 ### Key Decisions & Rationale
 
@@ -428,17 +1011,19 @@ Guidelines:
 
 #### Why Top 3 with Context?
 
-- **Balance**: All 20 with context = too many tokens (~11K)
+- **Balance**: All 7/20 with context = too many tokens
 - **Quality**: Top 3 are most relevant, deserve context
-- **Coverage**: Remaining 17 provide breadth
-- **Token efficiency**: ~2,500 tokens total
+- **Coverage**: Remaining results provide breadth
+- **Token efficiency**: ~1,500-2,500 tokens total for chat RAG
 
-#### Why ±5 verses?
+#### Why ±2 verses (changed from ±5)?
 
-- **Research-backed**: Standard context window in retrieval systems
-- **Surah structure**: Typically enough to understand narrative flow
-- **Practical**: Most passages make sense in 11-verse window
-- **Adjustable**: Easy to change if needed
+- **Updated decision**: Reduced from ±5 to ±2 for better token efficiency
+- **Reasoning**: 5-verse window (~600 tokens/result) was excessive for most queries
+- **Current**: 2-verse window (~250 tokens/result) balances context with brevity
+- **Still effective**: Most passages make sense in 5-verse window (1 primary + 2 before + 2 after)
+- **Adjustable**: Easy to change via context_window constant
+- **Verse pages**: Still use ±5 context when explicitly requested via ?context=true
 
 #### Why HNSW over IVFFlat?
 
@@ -452,80 +1037,154 @@ Guidelines:
 
 ### Working Features ✅
 
-1. **Semantic Search**: Natural language queries → relevant verses
-2. **Contextual Results**: Top 3 verses include ±5 surrounding verses
-3. **Bilingual Display**: Arabic + English for all verses
-4. **Citation Links**: Hyperlinked references to Quran.com
-5. **Similarity Scoring**: Shows relevance percentage
-6. **Fast Performance**: <150ms query time
-7. **Tool Integration**: LLM automatically calls queryQuran when needed
-8. **Streaming Responses**: Real-time response generation
-9. **Message History**: Chat persistence
-10. **Da'i Personality**: Islamic scholar character
+**Quran Features:**
+
+1. **Semantic Quran Search**: Natural language queries → relevant verses (vector search)
+2. **Contextual Results**: Top 3 verses include ±2 surrounding verses (RAG), up to ±5 on verse pages
+3. **Multilingual Reading**: English (master, fast) + Slovak (single JOIN, <200ms)
+4. **Shareable URLs**: Search results (`/search?q=...`) and individual verses (`/quran/2/255`)
+5. **Language Selector**: Dropdown with translator attribution, preserves URL params
+
+**Hadith Features:** 6. **Semantic Hadith Search**: Natural language queries → relevant hadiths (vector search) 7. **Grade Filtering**: Default sahih-only, configurable (sahih-only, sahih-and-hasan, all) 8. **Collection Filtering**: Search specific collections (Bukhari, Muslim, Nawawi40, Riyadussalihin) 9. **Rich Metadata**: Narrator chains, book/chapter info, source URLs to Sunnah.com
+
+**Chat & AI Features:** 10. **Tool-Based RAG**: LLM autonomously decides when to call queryQuran/queryHadith 11. **Multi-Source**: Can retrieve from both Quran and Hadith in single conversation 12. **Citation Links**: Hyperlinked references to Quran.com and Sunnah.com 13. **Streaming Responses**: Real-time SSE token-by-token streaming 14. **Da'i Personality**: Compassionate Islamic scholar, focuses on fundamentals 15. **Chain-of-Thought**: Reasoning model with `<think>` tag extraction
+
+**Performance & Quality:** 16. **Fast Performance**: <150ms English Quran, <200ms Slovak, <150ms Hadith 17. **Similarity Scoring**: Shows relevance percentage for all results 18. **Performance Monitoring**: Color-coded timing logs throughout application 19. **Message History**: Chat persistence with visibility controls
+
+**UI & UX:** 20. **Component Architecture**: Shared, reusable Quran components (~40% code reduction) 21. **Context Toggle**: Show/hide surrounding verses on individual pages 22. **Rich Metadata**: Open Graph, Twitter cards, breadcrumbs, Schema.org for SEO 23. **Responsive Design**: Mobile-friendly with Tailwind CSS 4
 
 ### Feature Specifications
 
-#### Vector Search
+#### Quran Vector Search
 
 - **Algorithm**: Cosine similarity via pgvector
 - **Index**: HNSW with `vector_cosine_ops`
-- **Query time**: ~50-100ms
+- **Query time**: ~1-5 seconds (English)
 - **Threshold**: 0.3 (30% minimum similarity)
-- **Results**: Top 20 verses
+- **Results**: Top 7 (RAG/chat), top 20 (search UI)
+
+#### Hadith Vector Search
+
+- **Algorithm**: Cosine similarity via pgvector
+- **Index**: HNSW with `vector_cosine_ops`
+- **Query time**: ~3-10 seconds (not great)
+- **Threshold**: 0.3 (30% minimum similarity)
+- **Results**: Top 3 hadiths
+- **Default filter**: Sahih-only (most authentic)
+- **Future**: Hybrid search with keyword/BM25 + RRF merge
 
 #### Context Enhancement
 
-- **Top N**: 3 most relevant verses
-- **Window**: ±5 verses (configurable)
+- **RAG/Chat**: Top 3 get ±2 verses (context_window = 2)
+- **Search UI**: Top 3 get ±2 verses
+- **Verse Pages**: ±5 verses (contextWindow = 5, togglable via ?context=true)
 - **Boundary**: Never crosses Surah boundaries
-- **Total context**: Up to 11 verses per result (1 primary + 5 before + 5 after)
+- **Total context (chat)**: Up to 5 verses per result (1 primary + 2 before + 2 after)
+- **Total context (page)**: Up to 11 verses (1 primary + 5 before + 5 after)
 
-#### Response Format
+#### Multilingual Support
+
+- **English**: Master language, stored in QuranVerse table (no JOIN, fastest)
+- **Slovak**: Stored in QuranTranslation table (single JOIN, <200ms)
+- **Embeddings**: Only English (multilingual embeddings planned)
+- **UI**: Language selector with translator attribution
+- **URL Preservation**: `?lang=sk` maintained across navigation
+
+#### Response Format (Chat)
 
 ```
-The Quran speaks about patience in several places:
+[User sees tool outputs above message with verses/hadiths]
 
-[Al-Baqarah 2:153](https://quran.com/2/153): "O you who believe,
-seek help through patience and prayer..."
+The Quran speaks about patience in several places. In [Al-Baqarah 2:153](https://quran.com/2/153),
+Allah instructs believers to seek help through patience and prayer. This is reinforced in
+[Surah Al-Asr 103:1-3](https://quran.com/103), where patience is listed among the key qualities
+of successful believers.
 
-In this passage (2:148-158), we see the context...
-[continues with full explanation using context]
+The Prophet Muhammad ﷺ also emphasized this in [Sahih Bukhari 1](https://sunnah.com/bukhari:1)...
 ```
 
 ---
 
 ## 📊 Data & Embeddings
 
-### Data Source
+### Data Sources
 
-- **English**: `data/quran.txt` - Translation source unknown (need to document)
+**Quran:**
+
+- **English Master**: `data/quran.txt` - Translation source (needs documentation)
 - **Arabic**: `data/quran-arabic.txt` - Tanzil Quran Text (Simple Minimal, v1.1)
+- **Slovak**: `data/quran-slovak.txt` + `data/quran-slovak-metadata.json` - Al-Sbenaty translation
 - **License**: Creative Commons Attribution 3.0 (Tanzil)
 - **Total Verses**: 6,236
 - **Format**: `1|1|In the name of God, the Gracious, the Merciful.`
+
+**Hadith:**
+
+- **Sahih Bukhari**: `scripts/data/bukhari-full.json` - 7,558 hadiths
+- **Sahih Muslim**: `scripts/data/muslim-full.json` - 2,920 hadiths
+- **40 Hadith Nawawi**: `scripts/data/nawawi40-full.json` - 42 hadiths
+- **Riyad as-Salihin**: `scripts/data/riyadussalihin-full.json` - 1,896 hadiths
+- **Total**: 12,416 hadiths
+- **Format**: JSON with full metadata (text, grade, narrator chain, references, URLs)
+- **Source**: Scraped from Sunnah.com using `scripts/scrape-hadith-universal.py`
 
 ### Embedding Model
 
 - **Model**: `google.textEmbedding("text-embedding-004")`
 - **Provider**: Google AI Studio
 - **Dimensions**: 768
-- **Task Type**: `RETRIEVAL_QUERY`
+- **Task Type**: `RETRIEVAL_QUERY` (for both queries and documents)
 - **Cost**: Free (up to 1,500 requests/day)
 - **Quality**: State-of-the-art retrieval embeddings
+- **Language**: English only (multilingual support planned)
 
-### Vector Index
+### Vector Indexes
+
+**Quran:**
 
 - **Type**: HNSW (Hierarchical Navigable Small World)
 - **Distance**: Cosine similarity (`vector_cosine_ops`)
 - **Index Name**: `embedding_hnsw_idx`
-- **Performance**: O(log n) search time
+- **Table**: QuranEmbedding
+- **Performance**: O(log n) search time, ~50-100ms queries
+
+**Hadith:**
+
+- **Type**: HNSW
+- **Distance**: Cosine similarity (`vector_cosine_ops`)
+- **Index Name**: `hadith_embedding_hnsw_idx`
+- **Table**: HadithEmbedding
+- **Performance**: O(log n) search time, ~50-100ms queries
+
+### Full-Text Search (Infrastructure)
+
+**Hadith searchVector:**
+
+- **Type**: tsvector (PostgreSQL full-text search)
+- **Index**: GIN (Generalized Inverted Index) - `hadith_search_idx`
+- **Status**: Infrastructure ready, not yet used in search logic
+- **Planned**: BM25/ts_rank keyword search + RRF merge with vector results
 
 ### Embedding Generation
 
+**Quran:**
+
 - **Batch Size**: 100 verses at a time
 - **Total Batches**: 63 (for 6,236 verses)
-- **Time**: ~10-15 minutes for full ingestion
-- **Rate Limit**: Well within free tier limits
+- **Time**: ~10 minutes for full ingestion
+
+**Hadith:**
+
+- **Batch Size**: 100 hadiths at a time
+- **Total Batches**: 125 (for 12,416 hadiths)
+- **Time**: ~20 minutes for full ingestion
+- **Rate Limit**: Spread across multiple days if needed
+
+**Slovak Translation:**
+
+- **Embeddings**: Not generated (uses English embeddings for search)
+- **Storage**: Only translation text and metadata
+- **Time**: ~5 minutes for ingestion
 
 ---
 
@@ -631,90 +1290,55 @@ Total: 100-150ms ✅
 
 ### Current Limitations
 
-#### 2. Dimension Limitations
+#### 1. Hybrid Search Not Implemented
+
+**Issue**: Infrastructure exists (searchVector, GIN indexes) but keyword search not implemented
+**Current**: Vector search only for Hadith
+**Impact**: May miss exact Arabic term matches or proper nouns
+**Status**: Phase 3 - implementation pending
+**Solution**: BM25/ts_rank keyword search + RRF merge
+
+#### 2. English-Only Embeddings
+
+**Issue**: Can only search using English text (embeddings generated from English)
+**Current**: Multilingual _reading_ (Slovak) but English-only _searching_
+**Impact**: Arabic-only or Slovak queries use English embeddings (suboptimal)
+**Future**: Multilingual embedding models (e.g., multilingual-e5, Cohere multilingual)
+
+#### 3. Dimension Limitations
 
 **Issue**: pgvector HNSW limited to 2000 dimensions
 **Current**: Using 768 dims (safe)
 **Impact**: Can't use larger embedding models without switching to IVFFlat (slower)
 
-#### 4. Single Language Search
+#### 4. No Tafsir (Commentary)
 
-**Issue**: Can only search using English text
-**Impact**: Arabic-only or other language queries might not work well
-**Future**: We want to support multiple languages - we must explore embedding model or multilingual models
+**Issue**: Only provides verse/hadith text, no scholarly commentary
+**Impact**: Users get sources but no deeper interpretation
+**Future**: Integrate Tafsir data (Phase 6)
 
-#### 5. No Ahadith and other books (bible - torah)
+#### 5. No Cross-Referencing
 
-**Issue**: Only provides verse text, no scholarly commentary
-**Impact**: Users get verses but no deeper interpretation
-**Future**: Integrate Tafsir data (Phase 5+)
+**Issue**: No automatic linking of related verses or hadiths
+**Impact**: Users must manually explore related topics
+**Future**: Build knowledge graph of thematic connections
 
 ### Edge Cases Handled ✅
 
 - Start of Surah (no contextBefore) → Returns empty array
 - End of Surah (no contextAfter) → Returns empty array
 - Short Surahs (e.g., Al-Kawthar, 3 verses) → Context includes full Surah
-- No relevant verses found → Returns "No relevant verses found" message
-- Database errors → Graceful error handling with user-friendly messages
+- No relevant results found → Returns "No relevant sources found" message
+- Database errors → Graceful error handling with ChatSDKError
+- Invalid verse references → 404 pages with helpful messaging
+- Language not supported → Falls back to English
+- Tool call failures → Error messages without breaking chat
 
 ---
 
 ## 🚀 Future Enhancements
 
 ### Planned Improvements (Priority Order)
-
-#### Phase 2: Contextual Chunk Embeddings (HIGH PRIORITY)
-
-**Goal**: Generate context for each verse before embedding
-**Impact**: 35% improvement in retrieval accuracy (based on research)
-
-**Approach**:
-
-```typescript
-// For each verse during ingestion:
-const context = await llm.generate({
-  prompt: `This verse is from Surah ${surah}, discussing ${theme}.
-  Verse: ${verse}
-  Context: Provide a brief context for this verse.`,
-});
-
-const contextualizedText = `${context}\n\n${verse}`;
-const embedding = await generateEmbedding(contextualizedText);
-```
-
-**Effort**: Medium (2-3 days)
-**Benefit**: High (significant quality improvement)
-
-#### Phase 3: BM25 Hybrid Search (MEDIUM PRIORITY)
-
-**Goal**: Combine vector search + keyword matching
-**Impact**: 49% total improvement (14% additional)
-
-**Approach**:
-
-1. Add PostgreSQL full-text search index
-2. Implement BM25 retrieval function
-3. Combine scores using rank fusion
-4. Return merged, deduplicated results
-
-**Effort**: Medium (3-4 days)
-**Benefit**: High (catches exact word matches that vectors miss)
-
-#### Phase 4: Reranking (OPTIONAL)
-
-**Goal**: Use specialized reranker for final ordering
-**Impact**: 67% total improvement (18% additional)
-
-**Approach**:
-
-- Use Cohere Rerank or Voyage Rerank API
-- Retrieve top 150 candidates
-- Rerank to top 20
-- Higher cost & latency
-
-**Effort**: Low (1-2 days)
-**Benefit**: Medium (diminishing returns)
-**Trade-off**: Added latency & cost
 
 ### Additional Features
 
@@ -795,10 +1419,10 @@ const embedding = await generateEmbedding(contextualizedText);
 pnpm install
 
 # Run dev server
-pnpm dev
+pnpm dev              # Uses --turbo for faster builds
 
 # Build for production
-pnpm build
+pnpm build            # Runs migrations + build
 
 # Start production server
 pnpm start
@@ -808,39 +1432,72 @@ pnpm start
 
 ```bash
 # Run migrations
-pnpm db:migrate
+pnpm db:migrate       # Executes SQL migrations
 
 # Generate Drizzle schema
-pnpm db:generate
+pnpm db:generate      # Creates new migration files
 
 # Open Drizzle Studio (DB GUI)
 pnpm db:studio
+
+# Push schema changes (dev only)
+pnpm db:push
+
+# Pull schema from DB
+pnpm db:pull
+
+# Check migrations
+pnpm db:check
+
+# Enable pgvector extension
+pnpm db:enable-pgvector
 ```
 
 ### Quran Data
 
 ```bash
 # Clear all Quran data
-pnpm clear:quran
+pnpm clear:quran      # Deletes QuranVerse + QuranEmbedding
 
-# Ingest Quran data (6,236 verses)
-pnpm ingest:quran
+# Ingest English Quran master data
+pnpm ingest:quran     # ~10 min, 6,236 verses + embeddings
+
+# Ingest Slovak translation
+pnpm ingest:quran:slovak  # ~5 min, 6,236 verses
 
 # Test Quran search
-pnpm test:quran
+pnpm test:quran       # Runs semantic search tests
+
+# Test multilingual queries
+pnpm test:multilingual  # Tests English + Slovak performance
 ```
 
-### Utilities
+### Hadith Data
 
 ```bash
-# Type check
-pnpm type-check
+# Clear all Hadith data
+pnpm clear:hadith     # Deletes HadithText + HadithEmbedding
 
-# Lint
-pnpm lint
+# Ingest Hadith collections
+pnpm ingest:hadith    # ~20 min, 12,416 hadiths + embeddings
+                      # Bukhari, Muslim, Nawawi40, Riyadussalihin
+```
 
-# Format
-pnpm format
+### Code Quality
+
+```bash
+# Lint code
+pnpm lint             # Runs ultracite check
+
+# Format code
+pnpm format           # Runs ultracite fix (auto-fix)
+```
+
+### Testing
+
+```bash
+# Run Playwright tests
+pnpm test             # E2E tests
 ```
 
 ---
@@ -882,40 +1539,83 @@ criterion/
 │   ├── (chat)/              # Chat interface
 │   │   ├── api/
 │   │   │   └── chat/
-│   │   │       └── route.ts # Main chat API endpoint
+│   │   │       └── route.ts # 🔥 Main chat API endpoint
 │   │   ├── layout.tsx
 │   │   └── page.tsx
+│   ├── (marketing)/         # Landing pages
+│   ├── search/              # 🔥 Shareable search page
+│   │   ├── api/
+│   │   │   └── route.ts     # Search API endpoint
+│   │   └── page.tsx
+│   ├── quran/               # Quran pages
+│   │   ├── [surahNumber]/
+│   │   │   ├── [ayahNumber]/
+│   │   │   │   └── page.tsx # 🔥 Individual verse page
+│   │   │   └── page.tsx     # Full Surah page
+│   │   └── page.tsx         # Quran index
 │   ├── globals.css
 │   └── layout.tsx
 ├── lib/
 │   ├── ai/
-│   │   ├── embeddings.ts    # 🔥 Core RAG logic
+│   │   ├── embeddings.ts    # 🔥 Core RAG logic (Quran + Hadith)
 │   │   ├── prompts.ts       # 🔥 System prompts
+│   │   ├── models.ts        # Model definitions
+│   │   ├── providers.ts     # XAI Grok 4 configuration
 │   │   └── tools/
-│   │       └── query-quran.ts # 🔥 Quran search tool
+│   │       ├── query-quran.ts  # 🔥 Quran search tool
+│   │       ├── query-hadith.ts # 🔥 Hadith search tool
+│   │       └── request-suggestions.ts
 │   ├── db/
 │   │   ├── index.ts         # Database connection
 │   │   ├── migrate.ts       # Migration runner
-│   │   ├── schema.ts        # 🔥 Database schema
+│   │   ├── queries.ts       # 🔥 Database query functions
+│   │   ├── schema.ts        # 🔥 Database schema (6 tables)
 │   │   └── migrations/      # SQL migrations
+│   ├── monitoring/
+│   │   └── performance.ts   # 🔥 Performance tracking utilities
+│   ├── quran-config.ts      # Surah metadata
+│   ├── quran-language.ts    # Language configuration
+│   ├── quran-metadata.ts    # Surah names, translations
+│   ├── quran-url-helpers.ts # URL building utilities
 │   ├── constants.ts
 │   ├── types.ts
 │   └── utils.ts
 ├── scripts/
-│   ├── ingest-quran.ts      # 🔥 Data ingestion
-│   ├── clear-quran-data.ts  # Clear data utility
-│   ├── test-quran-search.ts # 🔥 Test script
+│   ├── ingest-quran.ts      # 🔥 Quran data ingestion
+│   ├── ingest-quran-slovak.ts # Slovak translation ingestion
+│   ├── ingest-hadith.ts     # 🔥 Hadith data ingestion
+│   ├── clear-quran-data.ts  # Clear Quran data
+│   ├── clear-hadith-data.ts # Clear Hadith data
+│   ├── test-quran-search.ts # 🔥 Test Quran search
+│   ├── test-multilingual-queries.ts # Test translations
+│   ├── scrape-hadith-universal.py # Python scraper
+│   ├── enable-pgvector.ts
 │   └── run-dimension-migration.ts
+│   └── data/                # Hadith JSON files (12,416 hadiths)
 ├── data/
-│   ├── quran.txt            # 🔥 English translations
-│   └── quran-arabic.txt     # 🔥 Arabic text
+│   ├── quran.txt            # 🔥 English master (6,236 verses)
+│   ├── quran-arabic.txt     # 🔥 Arabic text
+│   ├── quran-slovak.txt     # Slovak translation
+│   └── quran-slovak-metadata.json # Translator info
 ├── components/              # UI components
+│   ├── quran/               # 🔥 Shared Quran components
+│   │   ├── layout/          # Page layouts
+│   │   ├── verse/           # Verse cards
+│   │   ├── navigation/      # Navigation components
+│   │   ├── language-selector.tsx
+│   │   └── shared/
+│   ├── quran-verses.tsx     # Chat display
+│   ├── hadith-narrations.tsx # Chat display
+│   ├── message.tsx
+│   └── ...
 ├── public/                  # Static assets
 ├── .env.local               # 🔐 Environment variables
 ├── package.json
 ├── drizzle.config.ts
 ├── next.config.ts
 ├── tsconfig.json
+├── CRITERION.md             # 🔥 Concise system docs
+├── CRITERION_DETAILED.md    # 🔥 This file
 └── README.md
 
 🔥 = Core files for understanding the system
@@ -953,15 +1653,43 @@ criterion/
 
 ### Why Not Supabase?
 
-- Already had Neon PostgreSQL setup
+- Already had Neon/Vercel PostgreSQL setup
 - Neon + pgvector works great
 - No need to switch platforms
 
 ### Why Not Pinecone/Qdrant?
 
-- pgvector works well for our use case (6,236 vectors)
+- pgvector works well for our use case (6,236 Quran + 12,416 Hadith = 18,652 vectors)
 - Keeps everything in PostgreSQL (simpler architecture)
 - Pinecone costs money ($70+/month)
+- If scale significantly (100K+ vectors), could reconsider
+
+### Why ±2 Context (reduced from ±5)?
+
+- **Updated decision**: Found ±5 was excessive for token usage
+- ±2 provides sufficient context (~250 tokens/result vs ~600)
+- Total: ~1,500-2,500 tokens for RAG (top 7 with 3 having context)
+- Verse pages still use ±5 when user explicitly requests context
+
+### Why XAI Grok 4?
+
+- **Performance**: Fast inference with grok-4-fast-non-reasoning
+- **Reasoning**: Dedicated reasoning model with chain-of-thought
+- **Cost**: Competitive pricing via Vercel AI Gateway
+- **Quality**: Strong performance on tool calling and Islamic content
+
+### Why Multi-Step Reasoning (stepCountIs(5))?
+
+- Allows LLM to make multiple tool calls for complex queries
+- Can call both queryQuran and queryHadith in single conversation
+- Prevents infinite loops while enabling follow-up reasoning
+- Typical flow: 1 reasoning step + 1-2 tool calls = good UX
+
+### Why Conditional Tool Availability?
+
+- **Reasoning model** (grok-4-fast-reasoning) doesn't need tools during reasoning phase
+- Disabling tools during reasoning reduces token usage and latency
+- Chat model (grok-4-fast-non-reasoning) has full tool access
 - If scale significantly (100K+ vectors), could reconsider
 
 ### Why Top 3 with Context?
@@ -1098,7 +1826,7 @@ console.log(`[Chat] User: ${userId}, Model: ${model}`);
 
 ---
 
-## 🙏 Islamic Considerations
+## 🙏 Islamic Considerations - IMPORTANT
 
 ### Accuracy is CRITICAL!
 
@@ -1144,58 +1872,69 @@ console.log(`[Chat] User: ${userId}, Model: ${model}`);
 
 ---
 
-## 📝 Change Log
-
-### October 13, 2025
-
-- ✅ Created Quran configuration file (`lib/quran-config.ts`) with surah verse counts
-- ✅ Fixed verse range boundary issue in QuranVerses component
-- ✅ Added `clampAyahNumber()` helper to prevent overshooting surah boundaries
-- ✅ Verse links now correctly respect surah length limits
-
-### October 11, 2025
-
-- ✅ Contextual verses implementation complete
-- ✅ Top 3 results get ±5 surrounding verses
-- ✅ Test script updated with context display
-- ✅ Documentation created (this file)
-
-### October 8, 2025
-
-- ✅ Switched from OpenAI to Gemini embeddings
-- ✅ Migrated from 1536 → 768 dimensions
-- ✅ Re-ingested 6,236 verses with new embeddings
-- ✅ Updated schema and migration files
-
-### Initial Implementation
-
-- ✅ Database setup with pgvector
-- ✅ QuranVerse and QuranEmbedding tables
-- ✅ Data ingestion scripts
-- ✅ Vector search implementation
-- ✅ Tool integration with LLM
-- ✅ Da'i system prompts
-
----
-
 ## 🚨 Important Notes for Future Engineers
 
-### 2. Keyword based search
+### 1. Hybrid Search Infrastructure Ready
 
-We already do an embedding / similarity search we should also do a keyword type search (maybe BM25) to improve accuracy of retreived chunks.
+The system has full-text search infrastructure in place but NOT YET IMPLEMENTED:
 
-### 3. Contextual chunk embeddings
+- ✅ `searchVector` column on HadithText (tsvector)
+- ✅ GIN index for full-text search
+- ⏳ **Missing**: Keyword search function (BM25 or ts_rank)
+- ⏳ **Missing**: Reciprocal Rank Fusion (RRF) merge algorithm
 
-Contextual chunk embeddings (generating context with LLM before embedding) will provide 35% improvement.
+**Current state**: Vector search only for both Quran and Hadith.
+**Next step**: Implement keyword search + RRF merge (Phase 3).
 
-### 4. **Don't Break the Da'i Personality**
+### 2. Context Window Changed
+
+The context window was **reduced from ±5 to ±2 verses** for RAG:
+
+- **RAG/Chat**: ±2 verses for top 3 results (better token efficiency)
+- **Verse Pages**: ±5 verses when `?context=true` (user explicitly requested)
+- **Reason**: ±5 was 600 tokens/result, ±2 is 250 tokens/result
+
+If you see references to ±5 in old docs, they're outdated.
+
+### 3. English-Only Embeddings
+
+**Critical limitation**: All embeddings are generated from English text.
+
+- **Implication**: Arabic or Slovak queries use English embeddings (suboptimal)
+- **Reading**: Multilingual (English + Slovak)
+- **Searching**: English only (embeddings are English-based)
+- **Future**: Switch to multilingual embedding model (Phase 5)
+
+### 4. Don't Break the Da'i Personality
 
 The Islamic Da'i personality is core to the product. When making changes:
 
-- Always test that Islamic questions trigger the tool
+- Always test that Islamic questions trigger tools
 - Verify citations are always included
 - Maintain humble, compassionate tone
-- Never let LLM fabricate verses
+- Never let LLM fabricate verses or hadiths
+- Focus on fundamentals, avoid controversial topics
+
+### 5. Tool Efficiency Matters
+
+The system prompt explicitly limits tool calls:
+
+- Max 1 reasoning step
+- Max 2 tool calls per interaction
+- **Why**: Too many tool calls = high latency, poor UX
+- **How**: LLM must make focused, efficient tool calls
+
+### 6. Performance Monitoring is Built-In
+
+Use the PerformanceTimer utilities for all new features:
+
+```typescript
+const timer = new PerformanceTimer("my-new-feature");
+const result = await timeAsync("my-operation", () => doWork());
+timer.log({ metadata: "value" });
+```
+
+This ensures we can track slow operations in production.
 
 ---
 
@@ -1253,14 +1992,6 @@ This system is a functional, high-quality Quran RAG chatbot with contextual retr
 - ✅ Working RAG with context
 - ✅ Fast performance
 - ✅ Islamic personality in place
-
-**Next Steps** (Priority Order):
-
-1. 🔍 Investigate tool response format issue (3 verses)
-2. 🚀 Implement Phase 2: Contextual chunk embeddings (+35% quality)
-3. 🔎 Implement Phase 3: BM25 hybrid search (+14% quality)
-4. 📊 Add user feedback mechanism
-5. 🎯 Consider Phase 4: Reranking (if needed)
 
 **The system is production-ready and serving its purpose as a Da'i helping users understand the Quran.** 🕋
 
