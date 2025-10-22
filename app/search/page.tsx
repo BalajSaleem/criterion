@@ -182,6 +182,24 @@ function SearchPageContent() {
                 ))}
               </motion.div>
             )}
+
+            {/* Cross-link to Hadith search */}
+            {!hasSearched && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="mt-4 text-sm text-zinc-500"
+              >
+                Looking for Hadith?{" "}
+                <Link
+                  href="/hadith/search"
+                  className="text-primary hover:underline"
+                >
+                  Search Authentic Hadith →
+                </Link>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </div>
