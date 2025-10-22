@@ -94,7 +94,7 @@ async function getContextVerses(
  * @param userQuery - The search query
  * @param limit - Maximum number of verses to return (default: 7 for RAG, 20 for search UI)
  */
-export async function findRelevantVerses(userQuery: string, limit: number = 7) {
+export async function findRelevantVerses(userQuery: string, limit: number = 13) {
   const timer = new PerformanceTimer("quran:search-total");
 
   // 1. Embed the user's question (using RETRIEVAL_QUERY task type)
@@ -199,7 +199,7 @@ export async function findRelevantHadiths(
   const {
     collections,
     gradePreference = "sahih-only",
-    limit = 3,
+    limit = 5,
   } = options;
 
   // Build grade filter based on preference

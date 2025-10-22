@@ -4,7 +4,7 @@ import { findRelevantVerses } from "../embeddings";
 
 export const queryQuran = tool({
   description: `Search the Holy Quran for verses relevant to a question or topic using semantic answer retrieval search.
-  Returns top 7 relevant verses. The top 3 most relevant verses include ±2 surrounding verses 
+  Returns top most relevant verses. The top 3 most relevant verses include ±2 surrounding verses 
   for full context. Use this tool when the user asks about Islamic teachings, guidance, 
   stories, or any spiritual/religious questions.`,
 
