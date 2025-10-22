@@ -8,7 +8,7 @@ export function QuranPageHeader() {
         <div className="flex items-center justify-between">
           <CriterionBranding />
           <nav className="flex gap-6 text-sm">
-            <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/quran/search" className="text-muted-foreground hover:text-foreground transition-colors">
               Search
             </Link>
             <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">

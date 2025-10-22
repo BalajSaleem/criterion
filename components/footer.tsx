@@ -15,8 +15,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/search" className="hover:text-foreground">
-                  Search Quran & Hadith
+                <Link href="/quran/search" className="hover:text-foreground">
+                  Search Quran
+                </Link>
+              </li>
+              <li>
+                <Link href="/hadith/search" className="hover:text-foreground">
+                  Search Hadith
                 </Link>
               </li>
               <li>

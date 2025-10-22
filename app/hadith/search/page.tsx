@@ -373,7 +373,7 @@ function HadithSearchPageContent() {
               >
                 Looking for Quran verses?{" "}
                 <Link
-                  href="/search"
+                  href="/quran/search"
                   className="text-primary hover:underline"
                 >
                   Search the Quran →

@@ -50,20 +50,34 @@ export const Greeting = () => {
           </div>
         </Link>
 
-        <Link
-          href="/search"
-          className="group flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800 transition-colors group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700">
-            <Search className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
-          </div>
-          <div className="flex-1">
-            <div className="text-sm font-medium sm:text-base">Search by Theme</div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
-              Find guidance on any topic
+        {/* Combined Search Card */}
+        <div className="group rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800 transition-colors group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700">
+              <Search className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-medium sm:text-base">Search by Theme</div>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+                Find guidance on any topic
+              </div>
             </div>
           </div>
-        </Link>
+          <div className="flex gap-2 mt-2">
+            <Link
+              href="/quran/search"
+              className="flex-1 text-center text-xs font-medium px-2.5 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Quran
+            </Link>
+            <Link
+              href="/hadith/search"
+              className="flex-1 text-center text-xs font-medium px-2.5 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Hadith
+            </Link>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

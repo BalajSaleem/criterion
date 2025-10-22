@@ -53,11 +53,11 @@ Criterion exists to bring authentic Islamic knowledge to anyone seeking truth, u
 ### What Criterion Does
 
 ✅ **Semantic Quran Search** — Ask natural language questions, get relevant verses  
-✅ **Semantic Hadith Search** — Search authentic Hadith with grade filtering (Sahih-first)  
+✅ **Semantic Hadith Search** — Search authentic Hadith with grade & collection filtering  
 ✅ **Contextual Understanding** — Top results include surrounding context for proper meaning  
 ✅ **Accurate Citations** — Every response cites real sources with hyperlinks  
 ✅ **Multilingual Reading** — English (fast) + Slovak (single JOIN <200ms)  
-✅ **Shareable URLs** — `/search?q=patience` and `/quran/2/255` with metadata  
+✅ **Shareable URLs** — `/quran/search?q=patience`, `/hadith/search?q=charity`, and `/quran/2/255` with metadata  
 ✅ **Real-time Streaming** — Progressive response generation with token-by-token delivery  
 ✅ **Tool-Based RAG** — LLM autonomously decides when to retrieve from Quran/Hadith
 
@@ -84,7 +84,7 @@ XAI Grok 4 LLM (decides which tools to use)
     ↓
 Tool Selection:
   - queryQuran → 6,236 verses (top 7 for chat, top 20 for search)
-  - queryHadith → 12,416 hadiths (with grade filtering)
+  - queryHadith → 12,416 hadiths (top 3 for chat, top 15 for search, with grade filtering)
     ↓
 Vector Search (768-dim Gemini embeddings)
     ↓
@@ -212,12 +212,18 @@ pnpm db:migrate   # Run migrations
 pnpm db:studio    # Open Drizzle Studio (GUI)
 ```
 
-### Quran Data
+### Data Ingestion & Testing
 
 ```bash
-pnpm clear:quran  # Clear all Quran data
-pnpm ingest:quran # Ingest Quran verses and generate embeddings
-pnpm test:quran   # Test Quran search functionality
+# Quran
+pnpm clear:quran         # Clear all Quran data
+pnpm ingest:quran        # Ingest Quran verses and generate embeddings
+pnpm ingest:quran:slovak # Ingest Slovak translation
+pnpm test:quran          # Test Quran search functionality
+
+# Hadith
+pnpm clear:hadith  # Clear all Hadith data
+pnpm ingest:hadith # Ingest Hadith and generate embeddings
 ```
 
 ## Project Structure
@@ -226,25 +232,36 @@ pnpm test:quran   # Test Quran search functionality
 criterion/
 ├── app/
 │   ├── (auth)/          # Authentication routes
-│   └── (chat)/          # Chat interface and API
-│       └── api/chat/    # Main chat endpoint
+│   ├── (chat)/          # Chat interface and API
+│   │   └── api/chat/    # Main chat endpoint
+│   ├── search/          # Quran search page
+│   │   └── api/         # Quran search API
+│   ├── hadith/
+│   │   └── search/      # Hadith search page and API
+│   └── quran/           # Quran reading pages
 ├── lib/
 │   ├── ai/
 │   │   ├── embeddings.ts     # Core RAG logic
 │   │   ├── prompts.ts        # Da'i system prompts
 │   │   └── tools/
-│   │       └── query-quran.ts # Quran search tool
+│   │       ├── query-quran.ts   # Quran search tool
+│   │       └── query-hadith.ts  # Hadith search tool
 │   └── db/
 │       ├── schema.ts         # Database schema
 │       └── migrations/       # SQL migrations
+├── components/
+│   ├── chat.tsx              # Main chat UI
+│   ├── quran-verses.tsx      # Quran display component
+│   ├── hadith-narrations.tsx # Hadith carousel
+│   └── hadith/
+│       └── hadith-card.tsx   # Reusable hadith card
 ├── scripts/
-│   ├── ingest-quran.ts       # Data ingestion
-│   ├── clear-quran-data.ts   # Clear data
-│   └── test-quran-search.ts  # Test RAG
-├── data/
-│   ├── quran.txt             # English translations
-│   └── quran-arabic.txt      # Arabic text
-└── components/               # UI components
+│   ├── ingest-quran.ts       # Quran data ingestion
+│   ├── ingest-hadith.ts      # Hadith data ingestion
+│   └── test-*.ts             # Test scripts
+└── data/
+    ├── quran*.txt            # Quran translations
+    └── *-full.json           # Hadith collections
 ```
 
 ## Documentation
@@ -269,6 +286,8 @@ criterion/
 ```
 components/
 ├── Chat UI (QuranVerses, HadithNarrations, MessageActions)
+├── Search Pages (Quran and Hadith semantic search with filters)
+├── Hadith Components (reusable HadithCard for search and chat)
 ├── Quran Pages (shared components for context, language selection)
 └── UI Components (buttons, inputs, etc.)
 
@@ -284,8 +303,9 @@ lib/
 
 app/
 ├── (chat)/api/chat (main chat endpoint)
+├── quran/search/ (Quran search page and API)
+├── hadith/search/ (Hadith search page and API)
 ├── quran/ (Quran reading pages)
-├── search/ (search results pages)
 └── (auth)/ (authentication)
 ```
 

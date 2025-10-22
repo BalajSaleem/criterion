@@ -64,6 +64,12 @@ app/(chat)/api/chat/route.ts     # Main chat endpoint (POST/DELETE)
       ├─ Tools: queryQuran, queryHadith, requestSuggestions
       ├─ Multi-step: stepCountIs(2)
       └─ Output: JsonToSseTransformStream → SSE to client
+
+app/search/api/route.ts          # Quran search API (GET)
+  └─ findRelevantVerses()        # Returns up to 20 results
+
+app/hadith/search/api/route.ts   # Hadith search API (GET)
+  └─ findRelevantHadiths()       # Returns up to 15 results with filters
 ```
 
 ### RAG Implementation
@@ -97,10 +103,14 @@ lib/ai/tools/
 **Search API:**
 
 - `/search/api?q=query` → Returns 20 verses (vs 7 for RAG), same ±2 context for top 3
+- `/hadith/search/api?q=query&collections=bukhari,muslim&grade=sahih-only` → Returns 15 hadiths with filters
+  - Collections: bukhari, muslim, nawawi40, riyadussalihin (optional, defaults to all)
+  - Grade: sahih-only (default), sahih-and-hasan, all
 
 **Shareable URLs:**
 
-- `/search?q=patience` → Shareable search results with URL sync (auto-loads on mount, updates URL via router.replace, validates queries)
+- `/quran/search?q=patience` → Quran search results with URL sync (auto-loads on mount, updates URL via router.replace, validates queries)
+- `/hadith/search?q=charity&collections=bukhari,muslim&grade=sahih-only` → Hadith search with filters (collections, authenticity grade)
 - `/quran/2/255` → Individual verse with ±5 context verses (toggle via `?context=false`)
   - Previous/Next navigation, links to full Surah and Quran.com
   - Rich metadata (Open Graph, Twitter cards, breadcrumbs, Schema.org)
@@ -346,29 +356,6 @@ score = sum(1 / (rank + k)) across all result lists
 - **Reading**: English + Slovak (expandable via `QuranTranslation` table)
 - No Tafsir (commentary) yet
 - Gemini free tier: 1,500 requests/day
-
----
-
-## 12. Next Steps
-
-**Shareability Roadmap:**
-
-- ✅ **Phase 1:** URL-based search (`/search?q=patience`)
-- ✅ **Phase 2:** Individual verse routes (`/quran/2/255` with ±5 context)
-- ✅ **Component Refactor:** Extracted shared Quran page components (40% code reduction)
-- ✅ **Multilingual Quran:** Slovak translation with language selector UI
-- 📋 **Phase 3:** Share buttons and copy-link UI
-- 📋 **Phase 4:** Dynamic OG images for verses
-
-**High Priority:**
-
-- Multilingual RAG (Arabic queries, more translations)
-- Contextual chunk embeddings (+35% accuracy)
-
-**Medium Priority:**
-
-- Hybrid search for Quran
-- Tafsir integration
 
 ---
 

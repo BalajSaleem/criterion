@@ -226,7 +226,7 @@ export default function HowItWorksPage() {
           </p>
         </Link>
         <Link
-          href="/search"
+          href="/quran/search"
           className="rounded-lg border p-4 transition-colors hover:bg-muted"
         >
           <h3 className="mb-2 font-semibold">Theme Search</h3>

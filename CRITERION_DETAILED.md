@@ -77,7 +77,7 @@ The system combines:
 - **Authentic Sources**: Defaults to Sahih (most reliable) hadiths with grade filtering
 - **Accurate Citations**: All responses cite real sources with hyperlinks (Quran.com, Sunnah.com)
 - **Multilingual Reading**: English (fast, no JOIN) + Slovak (single JOIN, <200ms)
-- **Shareable URLs**: `/search?q=patience`, `/quran/2/255` with Open Graph metadata
+- **Shareable URLs**: `/quran/search?q=patience`, `/hadith/search?q=charity`, `/quran/2/255` with Open Graph metadata
 - **Fast Performance**: <150ms for most queries, optimized with HNSW indexes
 
 ---
