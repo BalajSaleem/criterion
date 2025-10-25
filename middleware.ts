@@ -17,6 +17,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    "/about",
+    "/how-it-works",
+    "/faq",
+    "/developers",
+    "/quran",
+    "/hadith",
+    "/search",
+    "/topics",
+  ];
+
+  // Check if the current path is a public route
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
+
+  // Skip authentication for public routes
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
