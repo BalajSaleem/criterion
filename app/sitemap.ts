@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { SURAH_METADATA } from '@/lib/quran-metadata';
+import { getAllTopicsSorted } from '@/lib/topics';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://criterion.life';
 
@@ -37,6 +38,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: currentDate,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/topics`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly' as const,
+      priority: 0.9,
     },
     {
       url: `${siteUrl}/quran/search`,
@@ -85,5 +92,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  return [...staticPages, ...surahPages, ...versePages];
+  // All 20 topic pages
+  const topics = getAllTopicsSorted();
+  const topicPages = topics.map((topic) => ({
+    url: `${siteUrl}/topics/${topic.slug}`,
+    lastModified: currentDate,
+    changeFrequency: 'monthly' as const,
+    priority: topic.priority,
+  }));
+
+  return [...staticPages, ...surahPages, ...versePages, ...topicPages];
 }

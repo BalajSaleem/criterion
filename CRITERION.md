@@ -109,8 +109,9 @@ lib/ai/tools/
 
 **Shareable URLs:**
 
-- `/quran/search?q=patience` → Quran search results with URL sync (auto-loads on mount, updates URL via router.replace, validates queries)
-- `/hadith/search?q=charity&collections=bukhari,muslim&grade=sahih-only` → Hadith search with filters (collections, authenticity grade)
+- `/quran/search?q=patience` → Server-rendered search results with instant loading & dynamic SEO metadata
+- `/hadith/search?q=charity&collections=bukhari,muslim&grade=sahih-only` → Server-rendered hadith search with filters
+- `/topics/patience` → Pre-computed topic landing pages (20 topics covering 300K+ monthly searches)
 - `/quran/2/255` → Individual verse with ±5 context verses (toggle via `?context=false`)
   - Previous/Next navigation, links to full Surah and Quran.com
   - Rich metadata (Open Graph, Twitter cards, breadcrumbs, Schema.org)
@@ -149,11 +150,25 @@ components/quran/
     └── chat-cta.tsx                # CTA to chat section
 ```
 
+**Topic Pages:** (SEO landing pages)
+
+```
+app/topics/
+├── [slug]/page.tsx              # Dynamic topic page (20 topics)
+├── page.tsx                     # Topics index/browse
+└── components/
+    ├── topic-header.tsx         # Topic title & description
+    ├── verse-results-section.tsx # Quran verses section
+    └── hadith-results-section.tsx # Hadith narrations section
+
+lib/topics.ts                    # Topic definitions & queries
+```
+
 **Component Benefits:**
 
 - ~40% code reduction in page files
 - Single source of truth for styling
-- Easier to add features (e.g., share buttons)
+- Shared components between search & topics
 - Page files focus on data fetching + composition
 
 ---
@@ -335,21 +350,36 @@ score = sum(1 / (rank + k)) across all result lists
 
 **Why ±2 context verses?** Balance between context quality and token usage (600 tokens vs 1,500)  
 **Why hybrid search for Hadith?** Arabic terms and proper names need exact matching (+49% improvement)  
-**Why default Sahih-only?** Islamic scholarship prioritizes authenticity
+**Why default Sahih-only?** Islamic scholarship prioritizes authenticity  
+**Why server-side rendering for search?** Instant results, SEO-friendly, shareable URLs with proper previews  
+**Why topic pages?** Target high-volume keywords (300K+ searches/month) with zero content writing
 
 ---
-## 10. Performance
+## 10. SEO & Discoverability
+
+**Sitemap**: 6,378 URLs (8 static + 114 Surahs + 6,236 verses + 20 topics)  
+**Server-Side Rendering**: Search pages pre-render results for instant loading + SEO  
+**Dynamic Metadata**: Unique titles/descriptions per search query  
+**Public Access**: All content pages accessible without authentication  
+**Structured Data**: Organization, WebSite, Breadcrumbs, FAQ schemas
+
+**Topic Pages** (20 pre-computed landing pages):
+- Cover 5 pillars, core beliefs, moral topics, common questions
+- Reuse existing RAG infrastructure (zero manual content creation)
+
+---
+## 11. Performance
 
 | Operation              | Time      | Notes                         |
 | ---------------------- | --------- | ----------------------------- |
 | Quran search + context | 100-150ms | English (no JOIN)             |
 | Quran search (Slovak)  | 150-200ms | Single JOIN to translations   |
-| Hadith hybrid search   | 100-150ms | RRF merge                     |
+| Topic page load        | ~3-4s     | Pre-computes 15 verses + 8 hadiths |
 | Total query time       | <200ms    | Optimized with HNSW + indexes |
 
 ---
 
-## 11. Limitations
+## 12. Limitations
 
 - **Search & RAG**: English-only (vector embeddings not yet multilingual)
 - **Reading**: English + Slovak (expandable via `QuranTranslation` table)
@@ -373,6 +403,17 @@ pnpm ingest:quran && pnpm ingest:hadith
 
 # 4. Test & run
 pnpm test:quran
+pnpm dev  # localhost:3000
+
+# 5. SEO verification
+curl https://criterion.life/sitemap.xml | grep -c "<url>"  # Should show: 6378
+```
+
+**Key URLs**:
+- `/` - Chat interface (requires auth)
+- `/quran/search?q=patience` - Public search (server-rendered)
+- `/topics/prayer` - Topic landing page (SEO-optimized)
+- `/quran/2/255` - Individual verse page (6,236 total)
 pnpm dev  # localhost:3000
 ```
 
