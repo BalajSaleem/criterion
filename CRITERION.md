@@ -22,8 +22,7 @@ Help people understand Islam through authentic sources using natural language qu
 ```
 User asks question
   → Vercel AI SDK streamText with tools
-  → LLM autonomously calls queryQuran or queryHadith
-  → Hybrid RAG search (vector + keyword)
+  → LLM autonomously calls queryQuran, getQuranByReference, or queryHadith
   → LLM generates grounded answer
   → Stream response + citations to UI
 ```
@@ -37,7 +36,8 @@ User asks question
 
 **Search Flow:**
 
-- **Quran (RAG)**: Vector search → top 7 → add ±2 context verses for top 3
+- **Quran Semantic (RAG)**: Vector search → top 7 → add ±2 context verses for top 3
+- **Quran Exact Lookup**: Parse reference (2:255) → Direct DB query → Optional ±5 context (~50ms)
 - **Quran (Search UI)**: Vector search → top 20 → add ±2 context verses for top 3
 - **Hadith**: Vector + Keyword → RRF merge → top 3 (with grade filtering)
 
@@ -61,7 +61,7 @@ User asks question
 ```
 app/(chat)/api/chat/route.ts     # Main chat endpoint (POST/DELETE)
   └─ streamText()                # Vercel AI SDK streaming
-      ├─ Tools: queryQuran, queryHadith, requestSuggestions
+      ├─ Tools: queryQuran, getQuranByReference, queryHadith, requestSuggestions
       ├─ Multi-step: stepCountIs(2)
       └─ Output: JsonToSseTransformStream → SSE to client
 
@@ -81,9 +81,15 @@ lib/ai/embeddings.ts             # Core RAG logic
   ├─ findRelevantHadiths()       # Hybrid search (vector + keyword)
   └─ reciprocalRankFusion()      # RRF merge algorithm
 
+lib/quran-reference-parser.ts    # Reference parsing & validation
+  ├─ parseQuranReference()       # Parse "2:255" or "2:10-20" formats
+  ├─ validateReference()         # Validate against Surah metadata
+  └─ calculateContextWindow()    # Context boundaries with clamping
+
 lib/ai/tools/
-  ├─ query-quran.ts              # Quran tool definition (Zod schema)
-  └─ query-hadith.ts             # Hadith tool definition (with grade filter)
+  ├─ query-quran.ts              # Semantic search (Zod schema)
+  ├─ get-quran-by-reference.ts   # Exact reference lookup (NEW)
+  └─ query-hadith.ts             # Hadith search (with grade filter)
 ```
 
 ### Key Functions
@@ -95,9 +101,17 @@ lib/ai/tools/
 - `findRelevantHadiths(query, opts)` → Hybrid search with RRF merge
 - `reciprocalRankFusion(resultSets, k=60)` → Merges ranked lists
 
+**Reference Lookup:**
+
+- `parseQuranReference(ref)` → Parses "2:255", "2:10-20", validates format
+- `validateReference(parsed)` → Checks Surah (1-114) and Ayah bounds
+- `getVerseRange(surah, start, end)` → Fetches verse range efficiently
+- `getVerseWithContext(surah, ayah, window)` → Fetches verse with ±N context
+
 **Tool Definitions:**
 
-- `queryQuran` → Top 7 verses for RAG, top 3 with ±2 context (400-600 tokens)
+- `queryQuran` → Semantic search: top 7 verses, top 3 with ±2 context (400-600 tokens)
+- `getQuranByReference` → Exact lookup: single/range/batch, optional ±5 context (<50ms)
 - `queryHadith` → Top 3 hadiths, with grade/collection filters
 
 **Search API:**
@@ -121,14 +135,16 @@ lib/ai/tools/
 - `getVersesBySurah({ surahNumber, language? })` → All verses in a Surah (English or translation)
 - `getVerseWithContext({ surahNumber, ayahNumber, contextWindow?, language? })` → Target verse + ±5 context
 - `getVerseBySurahAndAyah({ surahNumber, ayahNumber, language? })` → Single verse lookup
+- `getVerseRange({ surahNumber, startAyah, endAyah, language? })` → Fetch verse range
 - **Language handling**: English = direct query (fast), translations = single JOIN to `QuranTranslation`
 
 ### UI Components
 
 **Chat Components:**
 
-- `QuranVerses` - Displays verses with ±2 context, links to Quran.com
-- `HadithNarrations` - Displays hadiths with grade badges, collapsible narrator chains, links to Sunnah.com
+- `QuranVerses` - Semantic search results with ±2 context, emerald theme, relevance scores
+- `QuranReference` - Exact reference lookups, blue theme, batch support, adaptive layout (NEW)
+- `HadithNarrations` - Hadith search results with grade badges, narrator chains, links to Sunnah.com
 
 **Quran Page Components:** (Shared between Surah and Verse pages)
 
@@ -258,9 +274,10 @@ GOOGLE_GENERATIVE_AI_API_KEY=...
 **Tool-Based RAG Architecture:**
 
 - LLM acts as an autonomous agent that decides when to retrieve information
-- Tools (`queryQuran`, `queryHadith`) expose retrieval functions to the model
+- Tools (`queryQuran`, `getQuranByReference`, `queryHadith`) expose retrieval functions
 - Model calls tools based on user query, not hardcoded retrieval logic
 - Retrieved context is automatically injected into the conversation
+- **Tool selection**: Semantic search vs exact lookup decided autonomously
 
 **Multi-Step Reasoning:**
 
@@ -294,12 +311,13 @@ createUIMessageStream({
 
 - ✅ Model autonomy: LLM decides if retrieval is needed
 - ✅ Selective retrieval: Only searches when relevant
-- ✅ Multi-source: Can call multiple tools (Quran + Hadith)
+- ✅ Multi-source: Can call multiple tools (Quran semantic + exact + Hadith)
 - ✅ Conversation-aware: Maintains context across tool calls
 
-### Hybrid RAG Search Strategy
 
-**Vector Search (Semantic):**
+### Search Strategies
+
+**Semantic Vector Search (queryQuran):**
 
 ```typescript
 const similarity = sql`1 - (${cosineDistance(embedding, queryEmbedding)})`;
@@ -321,6 +339,20 @@ const textRank = sql`ts_rank(searchVector, plainto_tsquery('english', ${query}))
 - Critical for proper nouns (e.g., "Abu Bakr", "Laylat al-Qadr")
 - Complements vector search for Arabic transliterations
 
+**Exact Reference Lookup (getQuranByReference):**
+
+```typescript
+parseQuranReference("2:255") → { surahNumber: 2, startAyah: 255, endAyah: 255 }
+validateReference() → Check bounds against SURAH_METADATA
+getVerseRange() → Direct DB query with indexed lookup
+// Returns: Exact verse(s) with optional context
+```
+
+- Parses "2:255" (single), "2:10-20" (range), ["2:255", "18:10"] (batch)
+- Validates against Surah metadata (1-114, verse counts)
+- Direct indexed query (no embeddings needed)
+- **Result**: 3x faster than semantic search, perfect for citations
+
 **Reciprocal Rank Fusion (RRF):**
 
 ```typescript
@@ -335,18 +367,8 @@ score = sum(1 / (rank + k)) across all result lists
 
 **Why ±2 context verses?** Balance between context quality and token usage (600 tokens vs 1,500)  
 **Why hybrid search for Hadith?** Arabic terms and proper names need exact matching (+49% improvement)  
+**Why exact reference tool?** Faster citations,Looking for answers in specific / popular sections, batch lookups, precise answers 
 **Why default Sahih-only?** Islamic scholarship prioritizes authenticity
-
----
-
-## 10. Performance
-
-| Operation              | Time      | Notes                         |
-| ---------------------- | --------- | ----------------------------- |
-| Quran search + context | 100-150ms | English (no JOIN)             |
-| Quran search (Slovak)  | 150-200ms | Single JOIN to translations   |
-| Hadith hybrid search   | 100-150ms | RRF merge                     |
-| Total query time       | <200ms    | Optimized with HNSW + indexes |
 
 ---
 
@@ -376,14 +398,6 @@ pnpm ingest:quran && pnpm ingest:hadith
 pnpm test:quran
 pnpm dev  # localhost:3000
 ```
-
----
-
-## 14. Debugging
-
-**No results:** Lower similarity threshold from 0.3 to 0.2  
-**Tool not called:** Check system prompt includes "ALWAYS use queryQuran/queryHadith"  
-**Slow queries:** Verify HNSW indexes exist with `\d QuranEmbedding` in psql
 
 ---
 

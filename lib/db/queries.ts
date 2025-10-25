@@ -577,6 +577,93 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
 // Quran Queries
 // =======================
 
+export async function getVerseRange({
+  surahNumber,
+  startAyah,
+  endAyah,
+  language = "en",
+}: {
+  surahNumber: number;
+  startAyah: number;
+  endAyah: number;
+  language?: string;
+}) {
+  try {
+    const { quranVerse, quranTranslation } = await import("./schema");
+
+    // Fast path: English (no JOIN)
+    if (language === "en") {
+      const verses = await db
+        .select()
+        .from(quranVerse)
+        .where(
+          and(
+            eq(quranVerse.surahNumber, surahNumber),
+            gte(quranVerse.ayahNumber, startAyah),
+            lte(quranVerse.ayahNumber, endAyah)
+          )
+        )
+        .orderBy(asc(quranVerse.ayahNumber))
+        .execute();
+
+      return verses.map((v) => ({
+        ...v,
+        translation: v.textEnglish,
+        surahNameTranslated: v.surahNameEnglish,
+        translatorName: null,
+      }));
+    }
+
+    // Other languages: JOIN with translations
+    const verses = await db
+      .select({
+        id: quranVerse.id,
+        surahNumber: quranVerse.surahNumber,
+        ayahNumber: quranVerse.ayahNumber,
+        surahNameArabic: quranVerse.surahNameArabic,
+        surahNameEnglish: quranVerse.surahNameEnglish,
+        textArabic: quranVerse.textArabic,
+        textEnglish: quranVerse.textEnglish,
+        createdAt: quranVerse.createdAt,
+        translation: quranTranslation.text,
+        surahNameTranslated: quranTranslation.surahNameTranslated,
+        surahNameTransliterated: quranTranslation.surahNameTransliterated,
+        translatorName: quranTranslation.translatorName,
+      })
+      .from(quranVerse)
+      .leftJoin(
+        quranTranslation,
+        and(
+          eq(quranTranslation.verseId, quranVerse.id),
+          eq(quranTranslation.language, language),
+          eq(quranTranslation.isDefault, true)
+        )
+      )
+      .where(
+        and(
+          eq(quranVerse.surahNumber, surahNumber),
+          gte(quranVerse.ayahNumber, startAyah),
+          lte(quranVerse.ayahNumber, endAyah)
+        )
+      )
+      .orderBy(asc(quranVerse.ayahNumber))
+      .execute();
+
+    // Fallback to English if translation not found
+    return verses.map((v) => ({
+      ...v,
+      translation: v.translation || v.textEnglish,
+      surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
+    }));
+  } catch (error) {
+    console.error("Failed to get verse range:", error);
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get verse range"
+    );
+  }
+}
+
 export async function getVersesBySurah({
   surahNumber,
   language = "en",

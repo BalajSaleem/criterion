@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { queryQuran } from "./ai/tools/query-quran";
 import type { queryHadith } from "./ai/tools/query-hadith";
+import type { getQuranByReference } from "./ai/tools/get-quran-by-reference";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
 import type { Suggestion } from "./db/schema";
 import type { AppUsage } from "./usage";
@@ -20,11 +21,13 @@ type requestSuggestionsTool = InferUITool<
 >;
 type queryQuranTool = InferUITool<typeof queryQuran>;
 type queryHadithTool = InferUITool<typeof queryHadith>;
+type getQuranByReferenceTool = InferUITool<typeof getQuranByReference>;
 
 export type ChatTools = {
   requestSuggestions: requestSuggestionsTool;
   queryQuran: queryQuranTool;
   queryHadith: queryHadithTool;
+  getQuranByReference: getQuranByReferenceTool;
 };
 
 export type CustomUIDataTypes = {

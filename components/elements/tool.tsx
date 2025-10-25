@@ -71,6 +71,7 @@ const getToolDisplayName = (type: ToolUIPart["type"]) => {
     "tool-requestSuggestions": "Request Suggestions",
     "tool-queryQuran": "Search Quran",
     "tool-queryHadith": "Search Hadith",
+    "tool-getQuranByReference": "Get Verse Reference",
   };
 
   return displayNames[type] || type;

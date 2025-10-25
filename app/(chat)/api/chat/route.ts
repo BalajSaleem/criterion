@@ -22,6 +22,7 @@ import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import type { ChatModel } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
+import { getQuranByReference } from "@/lib/ai/tools/get-quran-by-reference";
 import { queryHadith } from "@/lib/ai/tools/query-hadith";
 import { queryQuran } from "@/lib/ai/tools/query-quran";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
@@ -229,7 +230,7 @@ export async function POST(request: Request) {
           experimental_activeTools:
             selectedChatModel === "chat-model-reasoning"
               ? []
-              : ["requestSuggestions", "queryQuran", "queryHadith"],
+              : ["requestSuggestions", "queryQuran", "queryHadith", "getQuranByReference"],
           tools: {
             requestSuggestions: requestSuggestions({
               session,
@@ -237,6 +238,7 @@ export async function POST(request: Request) {
             }),
             queryQuran,
             queryHadith,
+            getQuranByReference,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
