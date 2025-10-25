@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowLeft, BookOpen, Sparkles, Search, MessageCircle } from "lucide-react";
 import { CriterionBranding } from "@/components/criterion-branding";
 import { getAllTopicSlugs, getTopicBySlug, getRelatedTopics } from "@/lib/topics";
@@ -180,12 +181,14 @@ export default async function TopicPage({ params }: TopicPageProps) {
 
           {verses.length > 0 ? (
             <div className="space-y-6">
-              {verses.map((verse, index) => (
-                <VerseCard
-                  key={`${verse.surahNumber}:${verse.ayahNumber}`}
-                  verse={verse}
-                />
-              ))}
+              <Suspense fallback={<div className="text-center py-8 text-muted-foreground">Loading verses...</div>}>
+                {verses.map((verse, index) => (
+                  <VerseCard
+                    key={`${verse.surahNumber}:${verse.ayahNumber}`}
+                    verse={verse}
+                  />
+                ))}
+              </Suspense>
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
