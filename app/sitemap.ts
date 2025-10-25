@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SURAH_METADATA } from '@/lib/quran-metadata';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://criterion.life';
 
@@ -71,5 +72,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...surahPages];
+  // All 6,236 individual verse pages
+  const versePages: MetadataRoute.Sitemap = [];
+  for (const surah of SURAH_METADATA) {
+    for (let ayah = 1; ayah <= surah.verses; ayah++) {
+      versePages.push({
+        url: `${siteUrl}/quran/${surah.number}/${ayah}`,
+        lastModified: currentDate,
+        changeFrequency: 'yearly' as const,
+        priority: 0.6,
+      });
+    }
+  }
+
+  return [...staticPages, ...surahPages, ...versePages];
 }
