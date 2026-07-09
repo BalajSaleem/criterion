@@ -19,7 +19,7 @@ import { quranVerse } from "../lib/db/schema.js";
 import * as fs from "fs";
 
 // Hardcoded database connection
-const client = postgres("postgresql://neondb_owner:npg_AoOBx2PWcY7f@ep-restless-flower-addv7shy-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require");
+const client = postgres("*");
 const db = drizzle(client);
 
 // ============================================================================

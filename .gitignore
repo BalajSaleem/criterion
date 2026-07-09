@@ -44,3 +44,4 @@ yarn-error.log*
 
 *.gz
 data/islam_qa.ndjson.gz
+.omc/
