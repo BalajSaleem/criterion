@@ -19,7 +19,6 @@ import {
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
-import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { QuranVerses } from "./quran-verses";
 import { QuranReference } from "./quran-reference";
@@ -112,14 +111,10 @@ const PurePreviewMessage = ({
             const { type } = part;
             const key = `message-${message.id}-part-${index}`;
 
-            if (type === "reasoning" && part.text?.trim().length > 0) {
-              return (
-                <MessageReasoning
-                  isLoading={isLoading}
-                  key={key}
-                  reasoning={part.text}
-                />
-              );
+            // Reasoning is never rendered: the model's chain-of-thought stays
+            // hidden and is only surfaced as a "thinking" indicator below.
+            if (type === "reasoning") {
+              return null;
             }
 
             if (type === "text") {

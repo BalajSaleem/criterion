@@ -97,11 +97,23 @@ export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
 }
 
+/**
+ * Drops reasoning parts so chain-of-thought is never handed to the client.
+ * Chats created before reasoning was withheld may still have them stored.
+ */
+export function stripReasoningParts<T extends { type: string }>(
+  parts: T[] | undefined
+): T[] {
+  return (parts ?? []).filter((part) => part.type !== 'reasoning');
+}
+
 export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role as 'user' | 'assistant' | 'system',
-    parts: message.parts as UIMessagePart<CustomUIDataTypes, ChatTools>[],
+    parts: stripReasoningParts(
+      message.parts as UIMessagePart<CustomUIDataTypes, ChatTools>[]
+    ),
     metadata: {
       createdAt: formatISO(message.createdAt),
     },
