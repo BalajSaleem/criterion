@@ -9,6 +9,7 @@ import {
 import type { Chat } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
+import { stripReasoningParts } from "@/lib/utils";
 import { getStreamContext } from "../../route";
 
 export async function GET(
@@ -97,7 +98,12 @@ export async function GET(
       execute: ({ writer }) => {
         writer.write({
           type: "data-appendMessage",
-          data: JSON.stringify(mostRecentMessage),
+          data: JSON.stringify({
+            ...mostRecentMessage,
+            parts: stripReasoningParts(
+              mostRecentMessage.parts as { type: string }[]
+            ),
+          }),
           transient: true,
         });
       },

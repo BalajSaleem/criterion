@@ -275,7 +275,9 @@ export async function POST(request: Request) {
 
         dataStream.merge(
           result.toUIMessageStream({
-            sendReasoning: true,
+            // Reasoning stays server-side: the client only ever sees a
+            // "thinking" indicator, never the raw chain-of-thought.
+            sendReasoning: false,
           })
         );
       },
