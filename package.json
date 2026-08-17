@@ -27,6 +27,8 @@
     "test:quran": "npx tsx scripts/test-quran-search.ts",
     "test:multilingual": "npx tsx scripts/test-multilingual-queries.ts",
     "test:embeddings": "npx tsx scripts/test-embeddings-comparison.ts",
+    "test:citations": "npx tsx scripts/test-citation-parser.ts",
+    "backtest:citations": "npx tsx scripts/backtest-citations.ts",
     "clear:hadith": "npx tsx scripts/clear-hadith-data.ts",
     "ingest:hadith": "npx tsx scripts/ingest-hadith.ts",
     "reembed:hadith": "npx tsx scripts/reembed-hadith.ts",

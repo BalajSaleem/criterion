@@ -173,56 +173,74 @@ function collectQuotes(text: string): Array<{ start: number; end: number; body: 
 }
 
 /**
- * Attach the nearest quoted span to a citation.
+ * Distance between a citation and a quote, or undefined if out of range.
  *
  * Both orderings occur in practice: `"…" (Al-Ikhlas 112:1)` and
- * `Al-Baqarah 2:153 says "…"`. A quote preceding the citation wins ties, since
- * that is the form the system prompt demonstrates.
+ * `Al-Baqarah 2:153 says "…"`. A preceding quote wins ties, since that is the
+ * form the system prompt demonstrates.
  */
-function attachQuote(
+function quoteDistance(
   citation: Citation,
-  quotes: Array<{ start: number; end: number; body: string }>,
-  claimed: Set<number>
-): void {
+  quote: { start: number; end: number }
+): number | undefined {
   const citeStart = citation.charOffset;
   const citeEnd = citation.charOffset + citation.raw.length;
 
-  let bestIndex = -1;
-  let bestDistance = Number.POSITIVE_INFINITY;
+  // A quote enclosing the citation is the link's own label, not scripture.
+  if (quote.start <= citeStart && quote.end >= citeEnd) {
+    return;
+  }
 
-  for (let i = 0; i < quotes.length; i++) {
-    if (claimed.has(i)) {
-      continue;
-    }
-    const quote = quotes[i];
+  const before = citeStart - quote.end;
+  if (before >= 0 && before <= QUOTE_PROXIMITY) {
+    return before;
+  }
 
-    // A quote enclosing the citation is the link's own label, not scripture.
-    if (quote.start <= citeStart && quote.end >= citeEnd) {
-      continue;
-    }
+  const after = quote.start - citeEnd;
+  if (after >= 0 && after <= QUOTE_PROXIMITY) {
+    // Bias against trailing quotes so a preceding one wins a tie.
+    return after + 1;
+  }
 
-    const before = citeStart - quote.end;
-    const after = quote.start - citeEnd;
+  return;
+}
 
-    let distance: number;
-    if (before >= 0 && before <= QUOTE_PROXIMITY) {
-      distance = before;
-    } else if (after >= 0 && after <= QUOTE_PROXIMITY) {
-      // Bias against trailing quotes so a preceding one wins a tie.
-      distance = after + 1;
-    } else {
-      continue;
-    }
+/**
+ * Pair quotes with citations by globally ascending distance.
+ *
+ * Assigning in document order would let an earlier, more distant citation
+ * claim a quote that sits right beside a later one — which then charges the
+ * wrong citation with a quote-fidelity failure and manufactures a violation.
+ * Sorting all candidate pairs by distance first makes the nearest pairing win
+ * regardless of document order.
+ */
+function attachQuotes(
+  citations: Citation[],
+  quotes: Array<{ start: number; end: number; body: string }>
+): void {
+  const pairs: Array<{ citation: number; quote: number; distance: number }> = [];
 
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestIndex = i;
+  for (let c = 0; c < citations.length; c++) {
+    for (let q = 0; q < quotes.length; q++) {
+      const distance = quoteDistance(citations[c], quotes[q]);
+      if (distance !== undefined) {
+        pairs.push({ citation: c, quote: q, distance });
+      }
     }
   }
 
-  if (bestIndex >= 0) {
-    citation.quote = quotes[bestIndex].body;
-    claimed.add(bestIndex);
+  pairs.sort((a, b) => a.distance - b.distance);
+
+  const usedCitations = new Set<number>();
+  const usedQuotes = new Set<number>();
+
+  for (const pair of pairs) {
+    if (usedCitations.has(pair.citation) || usedQuotes.has(pair.quote)) {
+      continue;
+    }
+    citations[pair.citation].quote = quotes[pair.quote].body;
+    usedCitations.add(pair.citation);
+    usedQuotes.add(pair.quote);
   }
 }
 
@@ -377,11 +395,7 @@ export function parseCitations(text: string): Citation[] {
 
   citations.sort((a, b) => a.charOffset - b.charOffset);
 
-  const quotes = collectQuotes(text);
-  const claimed = new Set<number>();
-  for (const citation of citations) {
-    attachQuote(citation, quotes, claimed);
-  }
+  attachQuotes(citations, collectQuotes(text));
 
   return citations;
 }

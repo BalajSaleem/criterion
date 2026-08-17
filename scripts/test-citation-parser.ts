@@ -153,6 +153,17 @@ section("Parsing — quote attachment");
   );
   check("distant quote is not attached", cites[0]?.quote === undefined);
 }
+{
+  // Regression: greedy document-order assignment let 2:152 claim a quote that
+  // sits beside 24:99, charging the wrong citation with a quote failure.
+  const cites = parseCitations(
+    'Also recall Al-Baqarah 2:152, and see An-Nur 24:99 which says "Wealth is a sign of favour".'
+  );
+  const baqarah = cites.find((c) => c.ayahStart === 152);
+  const nur = cites.find((c) => c.ayahStart === 99);
+  check("nearest citation wins the quote, not the earliest", nur?.quote !== undefined);
+  check("  → distant citation left unquoted", baqarah?.quote === undefined);
+}
 
 // ── Normalization ───────────────────────────────────────────────────────────
 section("Normalization");
