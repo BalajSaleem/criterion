@@ -1,9 +1,8 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
-
-import type { queryQuran } from "./ai/tools/query-quran";
-import type { queryHadith } from "./ai/tools/query-hadith";
 import type { getQuranByReference } from "./ai/tools/get-quran-by-reference";
+import type { queryHadith } from "./ai/tools/query-hadith";
+import type { queryQuran } from "./ai/tools/query-quran";
 import type { Suggestion } from "./db/schema";
 import type { AppUsage } from "./usage";
 
@@ -37,6 +36,12 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   usage: AppUsage;
+  /**
+   * Citation guard signal. `regenerating` means the streamed answer failed
+   * verification and is being replaced; `fallback` carries the localized text
+   * to show when a corrective retry also failed.
+   */
+  verification: { status: "regenerating" | "fallback"; text?: string };
 };
 
 export type ChatMessage = UIMessage<

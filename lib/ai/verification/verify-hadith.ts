@@ -25,7 +25,8 @@ export function verifyHadithCitation(
       citation,
       severity: "violation",
       checksFailed: ["existence"],
-      detail: "Hadith reference could not be parsed into a collection and number.",
+      detail:
+        "Hadith reference could not be parsed into a collection and number.",
     };
   }
 

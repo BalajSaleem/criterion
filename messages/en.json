@@ -30,7 +30,8 @@
       "Who is Allah?",
       "What does Islam think about Jesus?",
       "Tell me about the Prophet Muhammad (pbuh)."
-    ]
+    ],
+    "citationFallback": "I could not verify the sources needed to answer this reliably, so I would rather not answer than risk citing something inaccurate. Please try rephrasing your question."
   },
   "sidebar": {
     "today": "Today",

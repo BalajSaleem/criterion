@@ -114,7 +114,7 @@ type CorpusRow = {
   createdAt: string;
 };
 
-async function loadFromDatabase(args: Args): Promise<CorpusRow[]> {
+async function loadFromDatabase(): Promise<CorpusRow[]> {
   if (!process.env.POSTGRES_URL) {
     console.error(
       "POSTGRES_URL is not set. Add a read-only connection string to .env.local\n" +
@@ -200,12 +200,14 @@ async function main() {
 
   const rows = args.replay
     ? loadFromFile(args.replay)
-    : await loadFromDatabase(args);
+    : await loadFromDatabase();
 
   if (args.dump) {
     fs.writeFileSync(args.dump, JSON.stringify(rows, null, 2));
     console.log(`Dumped ${rows.length} rows → ${args.dump}`);
-    console.log("This file contains real user conversations. Do not commit it.");
+    console.log(
+      "This file contains real user conversations. Do not commit it."
+    );
   }
 
   // Group by chat so the grounding set can span the whole conversation, as it
@@ -284,7 +286,10 @@ async function main() {
           tally.byCheck[check]++;
         }
 
-        if (verdict.severity === "violation" && samples.length < args.samples * 4) {
+        if (
+          verdict.severity === "violation" &&
+          samples.length < args.samples * 4
+        ) {
           samples.push({
             era,
             chatId,
@@ -380,7 +385,9 @@ async function main() {
 
   if (samples.length > 0) {
     console.log(`\n${line}`);
-    console.log("SAMPLED VIOLATIONS — review these by hand for false positives");
+    console.log(
+      "SAMPLED VIOLATIONS — review these by hand for false positives"
+    );
     console.log(line);
 
     const byCheck = new Map<CheckName, typeof samples>();

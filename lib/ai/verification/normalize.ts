@@ -12,8 +12,7 @@
  */
 
 /** Arabic diacritics (harakat), honorific signs, and Quranic annotation marks. */
-const ARABIC_DIACRITICS =
-  /[ؐ-ًؚ-ٰٟۖ-ۭ]/g;
+const ARABIC_DIACRITICS = /[ؐ-ًؚ-ٰٟۖ-ۭ]/g;
 
 /**
  * Honorific ligatures, stripped BEFORE NFKD normalization.
@@ -64,20 +63,22 @@ const INVISIBLES = /[​-‏‪-‮⁠-⁤﻿]/g;
  * fancy characters still match.
  */
 export function normalizeScripture(input: string): string {
-  return input
-    .replace(INVISIBLES, "")
-    .replace(HONORIFIC_LIGATURES, " ")
-    .normalize("NFKD")
-    .replace(HONORIFIC_PHRASES, " ")
-    .replace(FANCY_DOUBLE_QUOTES, '"')
-    .replace(FANCY_SINGLE_QUOTES, "'")
-    .replace(TRANSLATOR_BRACKETS, " ")
-    .replace(ARABIC_DIACRITICS, "")
-    // Drop punctuation entirely: the model reflows commas and ellipses freely.
-    .replace(/[.,;:!?()"'—–-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return (
+    input
+      .replace(INVISIBLES, "")
+      .replace(HONORIFIC_LIGATURES, " ")
+      .normalize("NFKD")
+      .replace(HONORIFIC_PHRASES, " ")
+      .replace(FANCY_DOUBLE_QUOTES, '"')
+      .replace(FANCY_SINGLE_QUOTES, "'")
+      .replace(TRANSLATOR_BRACKETS, " ")
+      .replace(ARABIC_DIACRITICS, "")
+      // Drop punctuation entirely: the model reflows commas and ellipses freely.
+      .replace(/[.,;:!?()"'—–-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+  );
 }
 
 /**
@@ -88,13 +89,17 @@ export function normalizeScripture(input: string): string {
  * Comparison is deliberately loose — the goal is catching a model that cited
  * a genuinely different Surah, not policing transliteration style.
  */
+const COMBINING_MARKS = /[\u0300-\u036f]/g;
+const NON_LETTERS = /[^a-z]/g;
+const LEADING_ARTICLE = /^a[lnrstz]/;
+
 export function normalizeSurahName(input: string): string {
   return input
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(COMBINING_MARKS, "")
     .toLowerCase()
-    .replace(/[^a-z]/g, "")
-    .replace(/^a[lnrstz]/, "");
+    .replace(NON_LETTERS, "")
+    .replace(LEADING_ARTICLE, "");
 }
 
 /**

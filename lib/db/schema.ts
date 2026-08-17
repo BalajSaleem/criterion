@@ -319,40 +319,93 @@ export const hadithEmbedding = pgTable(
 export type HadithEmbedding = InferSelectModel<typeof hadithEmbedding>;
 
 // Voice session tracking
-export const voiceSession = pgTable("VoiceSession", {
-  id: uuid("id").primaryKey().notNull().defaultRandom(),
-  userId: uuid("userId")
-    .notNull()
-    .references(() => user.id),
-  startedAt: timestamp("startedAt").notNull().defaultNow(),
-  endedAt: timestamp("endedAt"),
-  duration: integer("duration"), // seconds
-  messageCount: integer("messageCount").default(0),
-  toolCallCount: integer("toolCallCount").default(0),
-  status: varchar("status", { enum: ["active", "completed", "error"] })
-    .notNull()
-    .default("active"),
-}, (table) => ({
-  userIdx: index("idx_voice_session_user").on(table.userId),
-}));
+export const voiceSession = pgTable(
+  "VoiceSession",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => user.id),
+    startedAt: timestamp("startedAt").notNull().defaultNow(),
+    endedAt: timestamp("endedAt"),
+    duration: integer("duration"), // seconds
+    messageCount: integer("messageCount").default(0),
+    toolCallCount: integer("toolCallCount").default(0),
+    status: varchar("status", { enum: ["active", "completed", "error"] })
+      .notNull()
+      .default("active"),
+  },
+  (table) => ({
+    userIdx: index("idx_voice_session_user").on(table.userId),
+  })
+);
 
 export type VoiceSession = InferSelectModel<typeof voiceSession>;
 
-export const voiceMessage = pgTable("VoiceMessage", {
-  id: uuid("id").primaryKey().notNull().defaultRandom(),
-  sessionId: uuid("sessionId")
-    .notNull()
-    .references(() => voiceSession.id, { onDelete: "cascade" }),
-  role: varchar("role", { enum: ["user", "assistant"] }).notNull(),
-  transcript: text("transcript"),
-  toolCalls: jsonb("toolCalls").$type<Array<{
-    tool: string;
-    args: Record<string, any>;
-    result: any;
-  }>>(),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-}, (table) => ({
-  sessionIdx: index("idx_voice_message_session").on(table.sessionId),
-}));
+export const voiceMessage = pgTable(
+  "VoiceMessage",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    sessionId: uuid("sessionId")
+      .notNull()
+      .references(() => voiceSession.id, { onDelete: "cascade" }),
+    role: varchar("role", { enum: ["user", "assistant"] }).notNull(),
+    transcript: text("transcript"),
+    toolCalls:
+      jsonb("toolCalls").$type<
+        Array<{
+          tool: string;
+          args: Record<string, any>;
+          result: any;
+        }>
+      >(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    sessionIdx: index("idx_voice_message_session").on(table.sessionId),
+  })
+);
 
 export type VoiceMessage = InferSelectModel<typeof voiceMessage>;
+
+// Citation guard audit log.
+//
+// One row per citation checked, written for every graded citation — not just
+// failures — so the pass rate is measurable rather than inferred from the
+// absence of violations. `attempt` distinguishes the first response from the
+// corrective retry, which is what tells us whether regeneration actually
+// recovers an answer or merely costs a round-trip.
+export const citationAudit = pgTable(
+  "CitationAudit",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    chatId: uuid("chatId")
+      .notNull()
+      .references(() => chat.id, { onDelete: "cascade" }),
+    // Not a foreign key: a discarded first attempt is audited but never
+    // persisted to Message_v2, and that row is exactly the one worth keeping.
+    messageId: uuid("messageId"),
+    modelId: varchar("modelId", { length: 100 }),
+    kind: varchar("kind", { enum: ["quran", "hadith"] }).notNull(),
+    citationRaw: text("citationRaw").notNull(),
+    severity: varchar("severity", {
+      enum: ["ok", "unverified", "violation"],
+    }).notNull(),
+    checksFailed: jsonb("checksFailed").$type<string[]>().notNull().default([]),
+    detail: text("detail"),
+    quoteScore: integer("quoteScore"), // 0-100, null when no quote was checked
+    attempt: integer("attempt").notNull().default(1),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    chatIdx: index("idx_citation_audit_chat").on(table.chatId),
+    // Drives the per-model trend query this table exists to answer.
+    modelSeverityIdx: index("idx_citation_audit_model_severity").on(
+      table.modelId,
+      table.severity,
+      table.createdAt
+    ),
+  })
+);
+
+export type CitationAudit = InferSelectModel<typeof citationAudit>;

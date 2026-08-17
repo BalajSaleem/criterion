@@ -101,6 +101,27 @@ export function Chat({
       if (dataPart.type === "data-usage") {
         setUsage(dataPart.data);
       }
+      if (dataPart.type === "data-verification") {
+        // The streamed answer failed citation verification. Drop its text so
+        // the replacement streams into a clean message; tool results stay put
+        // so the retrieved verses remain on screen throughout.
+        const { status: verificationStatus, text } = dataPart.data;
+        setMessages((current) => {
+          const lastIndex = current.length - 1;
+          const last = current[lastIndex];
+          if (!last || last.role !== "assistant") {
+            return current;
+          }
+
+          const withoutText = last.parts.filter((part) => part.type !== "text");
+          const parts =
+            verificationStatus === "fallback" && text
+              ? [...withoutText, { type: "text" as const, text }]
+              : withoutText;
+
+          return [...current.slice(0, lastIndex), { ...last, parts }];
+        });
+      }
     },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));

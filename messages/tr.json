@@ -30,7 +30,8 @@
       "Allah kimdir?",
       "İslam, Hz. İsa hakkında ne düşünür?",
       "Hz. Muhammed (sav) hakkında bilgi verin."
-    ]
+    ],
+    "citationFallback": "Bunu güvenilir biçimde yanıtlamak için gereken kaynakları doğrulayamadım; yanlış bir kaynak göstermektense yanıt vermemeyi tercih ederim. Lütfen sorunuzu yeniden ifade edin."
   },
   "sidebar": {
     "today": "Bugün",

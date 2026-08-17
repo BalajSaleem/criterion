@@ -45,11 +45,14 @@ export type Citation = {
  * Ordered longest-first within each group so the alternation prefers the most
  * specific form ("Sahih al-Bukhari" over "Bukhari").
  */
-const COLLECTION_ALIASES: ReadonlyArray<[RegExp, string]> = [
+const COLLECTION_ALIASES: readonly (readonly [RegExp, string])[] = [
   [/Sahih\s+al-Bukhari|Sahih\s+Bukhari|al-Bukhari|Bukhari/i, "bukhari"],
   [/Sahih\s+Muslim/i, "muslim"],
   [/Jami[`'’]?\s*at-Tirmidhi|at-Tirmidhi|Tirmidhi/i, "tirmidhi"],
-  [/Sunan\s+Abi\s+Dawud|Sunan\s+Abu\s+Dawud|Abi\s+Dawud|Abu\s+Dawud/i, "abudawud"],
+  [
+    /Sunan\s+Abi\s+Dawud|Sunan\s+Abu\s+Dawud|Abi\s+Dawud|Abu\s+Dawud/i,
+    "abudawud",
+  ],
   [/40\s+Hadith\s+Nawawi|Nawawi[’'`]?s?\s*40|Nawawi/i, "nawawi40"],
   [
     /Riyad\s+as-Salihin|Riyad\s+us-Salihin|Riyadh?\s+as-Saliheen|Riyadus\s*Salihin/i,
@@ -102,6 +105,12 @@ const HADITH_REF = new RegExp(
 );
 
 const MARKDOWN_LINK = /\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+const BARE_MUSLIM = /\bMuslim\b/i;
+const QURAN_HREF = /quran\.com\/(?:en\/)?(\d{1,3})(?:[/:](\d{1,3}))?/i;
+const HADITH_HREF = /sunnah\.com\/([a-z0-9]+)/i;
+const QURAN_HOST = /quran\.com/i;
+const HADITH_HOST = /sunnah\.com/i;
+const QUOTED_SPAN = /["\u201C]([^"\u201C\u201D]{8,600})["\u201D]/g;
 
 /**
  * How far from a citation a quoted span may sit and still be attributed to it.
@@ -122,15 +131,18 @@ export function resolveCollection(label: string): string | undefined {
   }
   // Bare "Muslim" only reaches here via HADITH_REF, which already required a
   // trailing number, so the prose collision is not a concern at this point.
-  if (/\bMuslim\b/i.test(label)) {
+  if (BARE_MUSLIM.test(label)) {
     return "muslim";
   }
   return;
 }
 
 /** Pull surah/ayah out of a quran.com href, e.g. /2/153 or /2:153 or /2. */
-export function parseQuranHref(href: string): { surah?: number; ayah?: number } {
-  const match = href.match(/quran\.com\/(?:en\/)?(\d{1,3})(?:[/:](\d{1,3}))?/i);
+export function parseQuranHref(href: string): {
+  surah?: number;
+  ayah?: number;
+} {
+  const match = href.match(QURAN_HREF);
   if (!match) {
     return {};
   }
@@ -149,7 +161,7 @@ export function parseQuranHref(href: string): { surah?: number; ayah?: number } 
  * not reliably the hadith number and must not be used to contradict the label.
  */
 export function parseHadithHref(href: string): { collection?: string } {
-  const match = href.match(/sunnah\.com\/([a-z0-9]+)/i);
+  const match = href.match(HADITH_HREF);
   if (!match) {
     return {};
   }
@@ -157,9 +169,12 @@ export function parseHadithHref(href: string): { collection?: string } {
 }
 
 /** Collect quoted spans with their offsets so citations can claim the nearest. */
-function collectQuotes(text: string): Array<{ start: number; end: number; body: string }> {
+function collectQuotes(
+  text: string
+): Array<{ start: number; end: number; body: string }> {
   const quotes: Array<{ start: number; end: number; body: string }> = [];
-  const pattern = /["“]([^"“”]{8,600})["”]/g;
+  const pattern = QUOTED_SPAN;
+  pattern.lastIndex = 0;
   let match = pattern.exec(text);
   while (match !== null) {
     quotes.push({
@@ -218,7 +233,8 @@ function attachQuotes(
   citations: Citation[],
   quotes: Array<{ start: number; end: number; body: string }>
 ): void {
-  const pairs: Array<{ citation: number; quote: number; distance: number }> = [];
+  const pairs: Array<{ citation: number; quote: number; distance: number }> =
+    [];
 
   for (let c = 0; c < citations.length; c++) {
     for (let q = 0; q < quotes.length; q++) {
@@ -244,26 +260,28 @@ function attachQuotes(
   }
 }
 
-function buildQuranCitation(
-  raw: string,
-  label: string,
-  offset: number,
-  surahName: string | undefined,
-  surah: number,
-  ayahStart: number,
-  ayahEnd: number | undefined,
-  href?: string
-): Citation {
+type QuranCitationInput = {
+  raw: string;
+  label: string;
+  offset: number;
+  surahName?: string;
+  surah: number;
+  ayahStart: number;
+  ayahEnd?: number;
+  href?: string;
+};
+
+function buildQuranCitation(input: QuranCitationInput): Citation {
   return {
     kind: "quran",
-    raw,
-    label,
-    href,
-    charOffset: offset,
-    surahName: surahName?.trim(),
-    surah,
-    ayahStart,
-    ayahEnd: ayahEnd ?? ayahStart,
+    raw: input.raw,
+    label: input.label,
+    href: input.href,
+    charOffset: input.offset,
+    surahName: input.surahName?.trim(),
+    surah: input.surah,
+    ayahStart: input.ayahStart,
+    ayahEnd: input.ayahEnd ?? input.ayahStart,
   };
 }
 
@@ -287,8 +305,8 @@ export function parseCitations(text: string): Citation[] {
     const [full, label, href] = link;
     const offset = link.index;
 
-    const isQuranHost = /quran\.com/i.test(href);
-    const isHadithHost = /sunnah\.com/i.test(href);
+    const isQuranHost = QURAN_HOST.test(href);
+    const isHadithHost = HADITH_HOST.test(href);
 
     QURAN_REF.lastIndex = 0;
     const quranInLabel = QURAN_REF.exec(label);
@@ -298,16 +316,16 @@ export function parseCitations(text: string): Citation[] {
     if (isQuranHost || (!isHadithHost && quranInLabel)) {
       if (quranInLabel) {
         citations.push(
-          buildQuranCitation(
-            full,
+          buildQuranCitation({
+            raw: full,
             label,
             offset,
-            quranInLabel[1],
-            Number(quranInLabel[2]),
-            Number(quranInLabel[3]),
-            quranInLabel[4] ? Number(quranInLabel[4]) : undefined,
-            href
-          )
+            surahName: quranInLabel[1],
+            surah: Number(quranInLabel[2]),
+            ayahStart: Number(quranInLabel[3]),
+            ayahEnd: quranInLabel[4] ? Number(quranInLabel[4]) : undefined,
+            href,
+          })
         );
       } else {
         // Linked to quran.com but the label carries no reference — take the
@@ -315,16 +333,14 @@ export function parseCitations(text: string): Citation[] {
         const fromHref = parseQuranHref(href);
         if (fromHref.surah && fromHref.ayah) {
           citations.push(
-            buildQuranCitation(
-              full,
+            buildQuranCitation({
+              raw: full,
               label,
               offset,
-              undefined,
-              fromHref.surah,
-              fromHref.ayah,
-              undefined,
-              href
-            )
+              surah: fromHref.surah,
+              ayahStart: fromHref.ayah,
+              href,
+            })
           );
         }
       }
@@ -380,15 +396,15 @@ export function parseCitations(text: string): Citation[] {
   let quran = QURAN_REF.exec(residual);
   while (quran !== null) {
     citations.push(
-      buildQuranCitation(
-        quran[0],
-        quran[0],
-        quran.index,
-        quran[1],
-        Number(quran[2]),
-        Number(quran[3]),
-        quran[4] ? Number(quran[4]) : undefined
-      )
+      buildQuranCitation({
+        raw: quran[0],
+        label: quran[0],
+        offset: quran.index,
+        surahName: quran[1],
+        surah: Number(quran[2]),
+        ayahStart: Number(quran[3]),
+        ayahEnd: quran[4] ? Number(quran[4]) : undefined,
+      })
     );
     quran = QURAN_REF.exec(residual);
   }

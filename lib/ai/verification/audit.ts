@@ -12,18 +12,6 @@ import { type AuditResult, rollUp } from "./types";
 import { verifyHadithCitation } from "./verify-hadith";
 import { verifyQuranCitation } from "./verify-quran";
 
-export { parseCitations } from "./parse-citations";
-export {
-  buildRetrievedSetFromMessages,
-  RetrievedSet,
-} from "./retrieved-set";
-export type {
-  AuditResult,
-  CheckName,
-  CitationVerdict,
-  Severity,
-} from "./types";
-
 export function auditCitations(
   text: string,
   retrieved: RetrievedSet

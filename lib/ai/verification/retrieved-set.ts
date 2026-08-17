@@ -33,6 +33,10 @@ const TOOL_PART_NAMES = [
   "tool-getQuranByReference",
 ] as const;
 
+const REFERENCE_NUMBERS = /(\d{1,3}):(\d{1,3})/;
+const TRAILING_NUMBER = /(\d{1,5})\s*$/;
+const CONTEXT_VERSE = /\[(\d{1,3}):(\d{1,3})\]\s*([^\n]*)/g;
+
 export function quranKey(surah: number, ayah: number): string {
   return `q:${surah}:${ayah}`;
 }
@@ -48,7 +52,7 @@ function parseReferenceNumbers(
   if (typeof reference !== "string") {
     return;
   }
-  const match = reference.match(/(\d{1,3}):(\d{1,3})/);
+  const match = reference.match(REFERENCE_NUMBERS);
   if (!match) {
     return;
   }
@@ -60,7 +64,7 @@ function parseHadithNumber(reference: unknown): number | undefined {
   if (typeof reference !== "string") {
     return;
   }
-  const match = reference.match(/(\d{1,5})\s*$/);
+  const match = reference.match(TRAILING_NUMBER);
   return match ? Number(match[1]) : undefined;
 }
 
@@ -111,7 +115,11 @@ export class RetrievedSet {
    * generics so the same method serves replay from stored parts.
    */
   absorbToolResults(
-    results: ReadonlyArray<{ toolName?: string; output?: unknown; result?: unknown }>
+    results: ReadonlyArray<{
+      toolName?: string;
+      output?: unknown;
+      result?: unknown;
+    }>
   ): void {
     for (const entry of results ?? []) {
       const output = entry.output ?? entry.result;
@@ -151,7 +159,9 @@ export class RetrievedSet {
       const output =
         part.output ??
         part.result ??
-        (isRecord(part.toolInvocation) ? part.toolInvocation.result : undefined);
+        (isRecord(part.toolInvocation)
+          ? part.toolInvocation.result
+          : undefined);
       if (output === undefined) {
         continue;
       }
@@ -190,7 +200,8 @@ export class RetrievedSet {
     if (!block) {
       return;
     }
-    const pattern = /\[(\d{1,3}):(\d{1,3})\]\s*([^\n]*)/g;
+    const pattern = CONTEXT_VERSE;
+    pattern.lastIndex = 0;
     let match = pattern.exec(block);
     while (match !== null) {
       const surah = Number(match[1]) || fallbackSurah;

@@ -11,8 +11,8 @@ import {
   inArray,
   lt,
   lte,
-  sql,
   type SQL,
+  sql,
 } from "drizzle-orm";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
@@ -21,7 +21,9 @@ import { generateUUID } from "../utils";
 import { db } from "./index";
 import {
   type Chat,
+  type CitationAudit,
   chat,
+  citationAudit,
   type DBMessage,
   document,
   message,
@@ -30,9 +32,9 @@ import {
   suggestion,
   type User,
   user,
-  vote,
-  voiceSession,
   voiceMessage,
+  voiceSession,
+  vote,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
 
@@ -215,6 +217,26 @@ export async function saveMessages({ messages }: { messages: DBMessage[] }) {
     return await db.insert(message).values(messages);
   } catch (_error) {
     throw new ChatSDKError("bad_request:database", "Failed to save messages");
+  }
+}
+
+/**
+ * Record citation-guard verdicts.
+ *
+ * Every graded citation is written, not only failures, so the pass rate is
+ * measurable directly rather than inferred. Audit logging must never break a
+ * response, so failures here are swallowed with a warning.
+ */
+export async function saveCitationAudits(
+  rows: Omit<CitationAudit, "id" | "createdAt">[]
+) {
+  if (rows.length === 0) {
+    return;
+  }
+  try {
+    return await db.insert(citationAudit).values(rows);
+  } catch (error) {
+    console.warn("Failed to persist citation audits", error);
   }
 }
 
@@ -660,10 +682,7 @@ export async function getVerseRange({
     }));
   } catch (error) {
     console.error("Failed to get verse range:", error);
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to get verse range"
-    );
+    throw new ChatSDKError("bad_request:database", "Failed to get verse range");
   }
 }
 
@@ -941,12 +960,12 @@ export async function getVerseWithContext({
         translation: v.translation || v.textEnglish,
         surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
       })),
-        contextAfter: contextAfter.map((v) => ({
-          ...v,
-          translation: v.translation || v.textEnglish,
-          surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
-        })),
-      };
+      contextAfter: contextAfter.map((v) => ({
+        ...v,
+        translation: v.translation || v.textEnglish,
+        surahNameTranslated: v.surahNameTranslated || v.surahNameEnglish,
+      })),
+    };
   } catch (error) {
     console.error("Failed to get verse with context:", error);
     throw new ChatSDKError(

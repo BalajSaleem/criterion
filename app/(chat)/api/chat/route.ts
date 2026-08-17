@@ -9,6 +9,7 @@ import {
 } from "ai";
 import { unstable_cache as cache } from "next/cache";
 import { after } from "next/server";
+import { getTranslations } from "next-intl/server";
 import {
   createResumableStreamContext,
   type ResumableStreamContext,
@@ -25,6 +26,12 @@ import { myProvider } from "@/lib/ai/providers";
 import { getQuranByReference } from "@/lib/ai/tools/get-quran-by-reference";
 import { queryHadith } from "@/lib/ai/tools/query-hadith";
 import { queryQuran } from "@/lib/ai/tools/query-quran";
+import {
+  auditCitations,
+  buildCorrectiveInstruction,
+} from "@/lib/ai/verification/audit";
+import { buildRetrievedSetFromMessages } from "@/lib/ai/verification/retrieved-set";
+import type { AuditResult } from "@/lib/ai/verification/types";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -33,18 +40,19 @@ import {
   getMessageCountByUserId,
   getMessagesByChatId,
   saveChat,
+  saveCitationAudits,
   saveMessages,
   updateChatLastContextById,
 } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
-import type { ChatMessage } from "@/lib/types";
-import type { AppUsage } from "@/lib/usage";
-import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import {
   PerformanceTimer,
   PerformanceTracker,
   timeAsync,
 } from "@/lib/monitoring/performance";
+import type { ChatMessage } from "@/lib/types";
+import type { AppUsage } from "@/lib/usage";
+import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -175,7 +183,10 @@ export async function POST(request: Request) {
       () => getMessagesByChatId({ id }),
       { chatId: id }
     );
-    const uiMessages = [...convertToUIMessages(messagesFromDb.slice(-10)), message];
+    const uiMessages = [
+      ...convertToUIMessages(messagesFromDb.slice(-10)),
+      message,
+    ];
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -219,56 +230,109 @@ export async function POST(request: Request) {
     let finalMergedUsage: AppUsage | undefined;
     const streamStartTimer = new PerformanceTimer("chat:stream-generation");
 
+    // Citation guard state, read by the stream's onFinish for persistence.
+    //
+    // The grounding set is seeded from the retained conversation so a citation
+    // referring back to something retrieved in an earlier turn is not treated
+    // as ungrounded, then grows as this turn's tools return.
+    const retrieved = buildRetrievedSetFromMessages(uiMessages);
+    const auditRows: Array<{
+      kind: "quran" | "hadith";
+      citationRaw: string;
+      severity: "ok" | "unverified" | "violation";
+      checksFailed: string[];
+      detail: string | null;
+      quoteScore: number | null;
+      attempt: number;
+    }> = [];
+    let didRegenerate = false;
+    let fallbackText: string | undefined;
+
+    const collectAudit = (audit: AuditResult, attempt: number) => {
+      for (const verdict of audit.verdicts) {
+        auditRows.push({
+          kind: verdict.citation.kind,
+          citationRaw: verdict.citation.raw.trim().slice(0, 500),
+          severity: verdict.severity,
+          checksFailed: verdict.checksFailed,
+          detail: verdict.detail || null,
+          quoteScore:
+            verdict.quoteScore === undefined
+              ? null
+              : Math.round(verdict.quoteScore * 100),
+          attempt,
+        });
+      }
+    };
+
+    const modelMessages = await convertToModelMessages(uiMessages);
+    const baseSystem = systemPrompt(requestHints);
+
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
-        const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt(requestHints),
-          messages: await convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(5),
-          experimental_transform: smoothStream(),
-          activeTools: ["queryQuran", "queryHadith", "getQuranByReference"],
-          tools: {
-            queryQuran,
-            queryHadith,
-            getQuranByReference,
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: "stream-text",
-          },
-          onFinish: async ({ usage }) => {
-            try {
-              const providers = await getTokenlensCatalog();
-              const modelId =
-                myProvider.languageModel(selectedChatModel).modelId;
-              if (!modelId) {
-                finalMergedUsage = usage;
-                dataStream.write({
-                  type: "data-usage",
-                  data: finalMergedUsage,
-                });
-                return;
-              }
+        const runAttempt = (
+          system: string,
+          onFinish?: Parameters<typeof streamText>[0]["onFinish"]
+        ) =>
+          streamText({
+            model: myProvider.languageModel(selectedChatModel),
+            system,
+            messages: modelMessages,
+            stopWhen: stepCountIs(5),
+            experimental_transform: smoothStream(),
+            activeTools: ["queryQuran", "queryHadith", "getQuranByReference"],
+            tools: {
+              queryQuran,
+              queryHadith,
+              getQuranByReference,
+            },
+            // Grow the grounding set as retrieval returns, so the audit knows
+            // exactly what the model was given to work from.
+            onStepFinish: ({ toolResults }) => {
+              retrieved.absorbToolResults(
+                (toolResults ?? []) as Array<{
+                  toolName?: string;
+                  output?: unknown;
+                }>
+              );
+            },
+            experimental_telemetry: {
+              isEnabled: isProductionEnvironment,
+              functionId: "stream-text",
+            },
+            onFinish,
+          });
 
-              if (!providers) {
-                finalMergedUsage = usage;
-                dataStream.write({
-                  type: "data-usage",
-                  data: finalMergedUsage,
-                });
-                return;
-              }
-
-              const summary = getUsage({ modelId, usage, providers });
-              finalMergedUsage = { ...usage, ...summary, modelId } as AppUsage;
-              dataStream.write({ type: "data-usage", data: finalMergedUsage });
-            } catch (err) {
-              console.warn("TokenLens enrichment failed", err);
+        const result = runAttempt(baseSystem, async ({ usage }) => {
+          try {
+            const providers = await getTokenlensCatalog();
+            const modelId = myProvider.languageModel(selectedChatModel).modelId;
+            if (!modelId) {
               finalMergedUsage = usage;
-              dataStream.write({ type: "data-usage", data: finalMergedUsage });
+              dataStream.write({
+                type: "data-usage",
+                data: finalMergedUsage,
+              });
+              return;
             }
-          },
+
+            if (!providers) {
+              finalMergedUsage = usage;
+              dataStream.write({
+                type: "data-usage",
+                data: finalMergedUsage,
+              });
+              return;
+            }
+
+            const summary = getUsage({ modelId, usage, providers });
+            finalMergedUsage = { ...usage, ...summary, modelId } as AppUsage;
+            dataStream.write({ type: "data-usage", data: finalMergedUsage });
+          } catch (err) {
+            console.warn("TokenLens enrichment failed", err);
+            finalMergedUsage = usage;
+            dataStream.write({ type: "data-usage", data: finalMergedUsage });
+          }
         });
 
         result.consumeStream();
@@ -280,16 +344,114 @@ export async function POST(request: Request) {
             sendReasoning: false,
           })
         );
+
+        // ── Citation guard ──────────────────────────────────────────────────
+        //
+        // The answer has now streamed in full. Audit it against what retrieval
+        // actually returned; a fabricated or ungrounded citation buys exactly
+        // one corrective retry, then the safe fallback.
+        let audit: AuditResult;
+        try {
+          audit = auditCitations(await result.text, retrieved);
+        } catch (error) {
+          // A guard failure must never take down a response.
+          console.error(
+            "Citation audit failed; passing response through",
+            error
+          );
+          return;
+        }
+
+        collectAudit(audit, 1);
+
+        if (audit.severity !== "violation") {
+          return;
+        }
+
+        console.warn(
+          `[CITATION GUARD] regenerating chat ${id}: ${audit.violations
+            .map((v) => `${v.citation.raw.trim()} (${v.detail})`)
+            .join(" | ")}`
+        );
+
+        didRegenerate = true;
+        dataStream.write({
+          type: "data-verification",
+          data: { status: "regenerating" },
+        });
+
+        const retry = runAttempt(
+          `${baseSystem}\n\n${buildCorrectiveInstruction(audit)}`
+        );
+        retry.consumeStream();
+        dataStream.merge(retry.toUIMessageStream({ sendReasoning: false }));
+
+        let retryAudit: AuditResult | undefined;
+        try {
+          retryAudit = auditCitations(await retry.text, retrieved);
+          collectAudit(retryAudit, 2);
+        } catch (error) {
+          console.error("Citation re-audit failed", error);
+          return;
+        }
+
+        if (retryAudit.severity !== "violation") {
+          return;
+        }
+
+        // Two failures means retrieval genuinely does not support an answer.
+        // Say so rather than showing a citation we cannot stand behind.
+        console.warn(
+          `[CITATION GUARD] retry still violating for chat ${id}; falling back`
+        );
+
+        const t = await getTranslations("chat");
+        fallbackText = t("citationFallback");
+        dataStream.write({
+          type: "data-verification",
+          data: { status: "fallback", text: fallbackText },
+        });
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
         streamStartTimer.log({ messageCount: messages.length });
 
+        // A regeneration streams a second assistant message. Only the final
+        // attempt is persisted — the rejected one survives in CitationAudit,
+        // which is where it is actually useful.
+        let messagesToSave = messages;
+        if (didRegenerate) {
+          const assistantMessages = messages.filter(
+            (m) => m.role === "assistant"
+          );
+          const finalAssistant = assistantMessages.at(-1);
+          if (assistantMessages.length > 1 && finalAssistant) {
+            messagesToSave = [finalAssistant];
+          }
+        }
+
+        // On fallback the persisted text is ours, not the model's, so the
+        // stored conversation matches what the user was actually shown.
+        if (fallbackText) {
+          const lastIndex = messagesToSave.length - 1;
+          messagesToSave = messagesToSave.map((m, index) =>
+            index === lastIndex && m.role === "assistant"
+              ? {
+                  ...m,
+                  parts: [
+                    ...m.parts.filter((part) => part.type !== "text"),
+                    { type: "text" as const, text: fallbackText as string },
+                  ],
+                }
+              : m
+          );
+        }
+
         await timeAsync(
           "chat:save-assistant-messages",
           () =>
             saveMessages({
-              messages: messages.map((currentMessage) => ({
+              messages: messagesToSave.map((currentMessage) => ({
                 id: currentMessage.id,
                 role: currentMessage.role,
                 parts: currentMessage.parts,
@@ -298,8 +460,22 @@ export async function POST(request: Request) {
                 chatId: id,
               })),
             }),
-          { chatId: id, messageCount: messages.length }
+          { chatId: id, messageCount: messagesToSave.length }
         );
+
+        if (auditRows.length > 0) {
+          const savedMessageId = messagesToSave.at(-1)?.id ?? null;
+          after(() =>
+            saveCitationAudits(
+              auditRows.map((row) => ({
+                ...row,
+                chatId: id,
+                messageId: savedMessageId,
+                modelId: finalMergedUsage?.modelId ?? null,
+              }))
+            )
+          );
+        }
 
         if (finalMergedUsage) {
           try {
@@ -316,8 +492,6 @@ export async function POST(request: Request) {
             console.warn("Unable to persist last usage for chat", id, err);
           }
         }
-
-        
       },
       onError: () => {
         return "Oops, an error occurred!";

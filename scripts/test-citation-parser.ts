@@ -8,7 +8,10 @@
  */
 
 import { auditCitations } from "@/lib/ai/verification/audit";
-import { normalizeScripture, quoteMatches } from "@/lib/ai/verification/normalize";
+import {
+  normalizeScripture,
+  quoteMatches,
+} from "@/lib/ai/verification/normalize";
 import { parseCitations } from "@/lib/ai/verification/parse-citations";
 import { RetrievedSet } from "@/lib/ai/verification/retrieved-set";
 
@@ -44,12 +47,14 @@ function makeRetrieved(): RetrievedSet {
             reference: "Al-Baqarah 2:153",
             english:
               "O you who have believed, seek help through patience and prayer. Indeed, Allah is with the patient.",
-            contextBefore: "[2:151] ...a Messenger from among yourselves\n[2:152] So remember Me; I will remember you.",
-            contextAfter: "[2:154] And do not say about those who are killed in the way of Allah, \"They are dead.\"",
+            contextBefore:
+              "[2:151] ...a Messenger from among yourselves\n[2:152] So remember Me; I will remember you.",
+            contextAfter:
+              '[2:154] And do not say about those who are killed in the way of Allah, "They are dead."',
           },
           {
             reference: "Al-Ikhlas 112:1",
-            english: "Say, \"He is Allah, [who is] One,\"",
+            english: 'Say, "He is Allah, [who is] One,"',
           },
           {
             reference: "Al-Ikhlas 112:2",
@@ -91,14 +96,20 @@ section("Parsing — citation formats");
     "As stated in [Al-Baqarah 2:153](https://quran.com/2/153), patience matters."
   );
   check("markdown quran link", cites.length === 1 && cites[0].kind === "quran");
-  check("  → surah/ayah extracted", cites[0]?.surah === 2 && cites[0]?.ayahStart === 153);
+  check(
+    "  → surah/ayah extracted",
+    cites[0]?.surah === 2 && cites[0]?.ayahStart === 153
+  );
   check("  → href captured", cites[0]?.href === "https://quran.com/2/153");
 }
 {
   const cites = parseCitations(
     "See [Sahih al-Bukhari 3443](https://sunnah.com/bukhari/60/3443)."
   );
-  check("markdown hadith link", cites.length === 1 && cites[0].kind === "hadith");
+  check(
+    "markdown hadith link",
+    cites.length === 1 && cites[0].kind === "hadith"
+  );
   check("  → collection slug", cites[0]?.collection === "bukhari");
   check("  → hadith number", cites[0]?.hadithNumber === 3443);
 }
@@ -124,7 +135,11 @@ section("Parsing — citation formats");
   const cites = parseCitations(
     "A Muslim should pray. Every Muslim believes this. Muslims are many."
   );
-  check("bare 'Muslim' in prose is not a citation", cites.length === 0, `got ${cites.length}`);
+  check(
+    "bare 'Muslim' in prose is not a citation",
+    cites.length === 0,
+    `got ${cites.length}`
+  );
 }
 {
   const cites = parseCitations("No references here at all, just prose.");
@@ -161,7 +176,10 @@ section("Parsing — quote attachment");
   );
   const baqarah = cites.find((c) => c.ayahStart === 152);
   const nur = cites.find((c) => c.ayahStart === 99);
-  check("nearest citation wins the quote, not the earliest", nur?.quote !== undefined);
+  check(
+    "nearest citation wins the quote, not the earliest",
+    nur?.quote !== undefined
+  );
   check("  → distant citation left unquoted", baqarah?.quote === undefined);
 }
 
@@ -178,12 +196,16 @@ check(
 );
 check(
   "honorific stripped",
-  normalizeScripture("The Prophet ﷺ said") === normalizeScripture("The Prophet said")
+  normalizeScripture("The Prophet ﷺ said") ===
+    normalizeScripture("The Prophet said")
 );
 check(
   "exact containment matches",
-  quoteMatches("Allah is with the patient", "Indeed, Allah is with the patient.", 0.72)
-    .mode === "exact"
+  quoteMatches(
+    "Allah is with the patient",
+    "Indeed, Allah is with the patient.",
+    0.72
+  ).mode === "exact"
 );
 check(
   "unrelated text does not match",
@@ -199,14 +221,20 @@ section("Check 1 — existence");
 {
   const r = auditCitations("See Al-Baqarah 2:400 for this.", makeRetrieved());
   check("ayah beyond surah length is a violation", r.severity === "violation");
-  check("  → attributed to existence", r.violations[0]?.checksFailed[0] === "existence");
+  check(
+    "  → attributed to existence",
+    r.violations[0]?.checksFailed[0] === "existence"
+  );
 }
 {
   const r = auditCitations("See Surah 115:1 for this.", makeRetrieved());
   check("surah beyond 114 is a violation", r.severity === "violation");
 }
 {
-  const r = auditCitations("Reported in Sahih al-Bukhari 99999.", makeRetrieved());
+  const r = auditCitations(
+    "Reported in Sahih al-Bukhari 99999.",
+    makeRetrieved()
+  );
   check("hadith number beyond collection size", r.severity === "violation");
 }
 
@@ -217,7 +245,10 @@ section("Check 2 — coherence");
     makeRetrieved()
   );
   check("wrong surah name for the number", r.severity === "violation");
-  check("  → attributed to coherence", r.violations[0]?.checksFailed[0] === "coherence");
+  check(
+    "  → attributed to coherence",
+    r.violations[0]?.checksFailed[0] === "coherence"
+  );
 }
 {
   const r = auditCitations(
@@ -249,11 +280,17 @@ section("Check 3 — groundedness");
   );
 }
 {
-  const r = auditCitations("Consider Al-Baqarah 2:152 on this.", makeRetrieved());
+  const r = auditCitations(
+    "Consider Al-Baqarah 2:152 on this.",
+    makeRetrieved()
+  );
   check("verse from a context window is grounded", r.severity === "ok");
 }
 {
-  const r = auditCitations("Reported in Sahih al-Bukhari 1234.", makeRetrieved());
+  const r = auditCitations(
+    "Reported in Sahih al-Bukhari 1234.",
+    makeRetrieved()
+  );
   check("never-retrieved hadith is a violation", r.severity === "violation");
 }
 {
@@ -278,15 +315,25 @@ section("Check 4 — quote fidelity");
     '"Wealth and gold are the greatest of all blessings a believer may hold" (Al-Baqarah 2:153).',
     makeRetrieved()
   );
-  check("fabricated quote on a real verse is a violation", r.severity === "violation");
-  check("  → attributed to quote", r.violations[0]?.checksFailed[0] === "quote");
+  check(
+    "fabricated quote on a real verse is a violation",
+    r.severity === "violation"
+  );
+  check(
+    "  → attributed to quote",
+    r.violations[0]?.checksFailed[0] === "quote"
+  );
 }
 {
   const r = auditCitations(
     '"None of you truly believes until he loves for his brother what he loves for himself" (Nawawi 13).',
     makeRetrieved()
   );
-  check("verbatim hadith quote passes", r.severity === "ok", r.verdicts[0]?.detail);
+  check(
+    "verbatim hadith quote passes",
+    r.severity === "ok",
+    r.verdicts[0]?.detail
+  );
 }
 {
   const r = auditCitations(
@@ -305,8 +352,16 @@ section("End to end");
       "([Nawawi 13](https://sunnah.com/nawawi40/13)).",
     makeRetrieved()
   );
-  check("clean grounded answer passes", good.severity === "ok", good.verdicts.map((v) => v.detail).join(" | "));
-  check("  → both citations found", good.citationCount === 2, `got ${good.citationCount}`);
+  check(
+    "clean grounded answer passes",
+    good.severity === "ok",
+    good.verdicts.map((v) => v.detail).join(" | ")
+  );
+  check(
+    "  → both citations found",
+    good.citationCount === 2,
+    `got ${good.citationCount}`
+  );
 }
 {
   const bad = auditCitations(
