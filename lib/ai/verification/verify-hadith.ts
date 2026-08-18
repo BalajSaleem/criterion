@@ -1,5 +1,5 @@
 import { COLLECTION_METADATA } from "@/lib/hadith-metadata";
-import { quoteMatches } from "./normalize";
+import { quoteMatchesAny } from "./normalize";
 import { type Citation, parseHadithHref } from "./parse-citations";
 import { hadithKey, type RetrievedSet } from "./retrieved-set";
 import {
@@ -84,10 +84,10 @@ export function verifyHadithCitation(
   }
 
   // ── Check 4: quote fidelity ───────────────────────────────────────────────
-  if (citation.quote && entry.text) {
-    const match = quoteMatches(
+  if (citation.quote && (entry.text || entry.textArabic)) {
+    const match = quoteMatchesAny(
       citation.quote,
-      entry.text,
+      [entry.text, entry.textArabic],
       QUOTE_SIMILARITY_THRESHOLD
     );
 

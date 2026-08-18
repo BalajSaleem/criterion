@@ -13,6 +13,7 @@
  *   npx tsx scripts/backtest-citations.ts --samples 10
  *   npx tsx scripts/backtest-citations.ts --dump /path/to/corpus.json
  *   npx tsx scripts/backtest-citations.ts --replay /path/to/corpus.json
+ *   npx tsx scripts/backtest-citations.ts --http
  *
  * Requires POSTGRES_URL in .env.local (read-only credentials are sufficient
  * and preferred) unless --replay is given, which reads a previously dumped
@@ -23,6 +24,7 @@
  */
 
 import fs from "node:fs";
+import { neon } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import { asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -69,11 +71,12 @@ type Args = {
   samples: number;
   dump?: string;
   replay?: string;
+  http: boolean;
 };
 
 function parseArgs(): Args {
   const argv = process.argv.slice(2);
-  const args: Args = { samples: 5 };
+  const args: Args = { samples: 5, http: false };
 
   for (let i = 0; i < argv.length; i++) {
     const next = argv[i + 1];
@@ -98,6 +101,9 @@ function parseArgs(): Args {
         args.replay = next;
         i++;
         break;
+      case "--http":
+        args.http = true;
+        break;
       default:
         break;
     }
@@ -114,8 +120,91 @@ type CorpusRow = {
   createdAt: string;
 };
 
-async function loadFromDatabase(): Promise<CorpusRow[]> {
-  if (!process.env.POSTGRES_URL) {
+const MESSAGE_COLUMNS = {
+  id: message.id,
+  chatId: message.chatId,
+  role: message.role,
+  parts: message.parts,
+  createdAt: message.createdAt,
+};
+
+type RawRow = {
+  id: string;
+  chatId: string;
+  role: string;
+  parts: unknown;
+  createdAt: Date | string;
+};
+
+function toCorpusRow(row: RawRow): CorpusRow {
+  return {
+    id: row.id,
+    chatId: row.chatId,
+    role: row.role,
+    parts: row.parts,
+    createdAt:
+      row.createdAt instanceof Date
+        ? row.createdAt.toISOString()
+        : new Date(row.createdAt).toISOString(),
+  };
+}
+
+/** Rows per HTTP round-trip; keeps each response well inside Neon's limit. */
+const HTTP_PAGE_SIZE = 1000;
+
+/**
+ * Neon over HTTPS.
+ *
+ * Sandboxed and CI environments frequently allow outbound 443 but not raw
+ * Postgres on 5432, and Neon hostnames often resolve IPv6-only. The HTTP
+ * driver goes over ordinary HTTPS, so it works anywhere a fetch would.
+ *
+ * Issues raw SQL through the Neon client rather than going through Drizzle's
+ * neon-http adapter: drizzle 0.34 drives that client in a calling style
+ * @neondatabase/serverless v1 no longer accepts, and this is a single
+ * read-only query not worth pinning versions over.
+ */
+async function loadOverHttp(url: string): Promise<CorpusRow[]> {
+  const sql = neon(url);
+  const rows: CorpusRow[] = [];
+
+  for (let offset = 0; ; offset += HTTP_PAGE_SIZE) {
+    const page = (await sql.query(
+      'SELECT id, "chatId", role, parts, "createdAt" FROM "Message_v2" ' +
+        'ORDER BY "chatId", "createdAt" LIMIT $1 OFFSET $2',
+      [HTTP_PAGE_SIZE, offset]
+    )) as RawRow[];
+
+    rows.push(...page.map(toCorpusRow));
+    process.stdout.write(`\r  fetched ${rows.length} rows …`);
+
+    if (page.length < HTTP_PAGE_SIZE) {
+      break;
+    }
+  }
+  process.stdout.write("\n");
+
+  return rows;
+}
+
+/** Standard Postgres over TCP. */
+async function loadOverTcp(url: string): Promise<CorpusRow[]> {
+  const client = postgres(url, { max: 1, connect_timeout: 15 });
+  try {
+    const db = drizzle(client);
+    const rows = await db
+      .select(MESSAGE_COLUMNS)
+      .from(message)
+      .orderBy(asc(message.chatId), asc(message.createdAt));
+    return (rows as RawRow[]).map(toCorpusRow);
+  } finally {
+    await client.end();
+  }
+}
+
+async function loadFromDatabase(preferHttp: boolean): Promise<CorpusRow[]> {
+  const url = process.env.POSTGRES_URL;
+  if (!url) {
     console.error(
       "POSTGRES_URL is not set. Add a read-only connection string to .env.local\n" +
         "(already gitignored), or use --replay with a previously dumped corpus."
@@ -123,30 +212,25 @@ async function loadFromDatabase(): Promise<CorpusRow[]> {
     process.exit(1);
   }
 
-  const client = postgres(process.env.POSTGRES_URL, { max: 1 });
-  const db = drizzle(client);
+  const isNeon = url.includes("neon.tech");
 
-  console.log("Reading Message_v2 …");
-  const rows = await db
-    .select({
-      id: message.id,
-      chatId: message.chatId,
-      role: message.role,
-      parts: message.parts,
-      createdAt: message.createdAt,
-    })
-    .from(message)
-    .orderBy(asc(message.chatId), asc(message.createdAt));
+  if (preferHttp || !isNeon) {
+    console.log(`Reading Message_v2 over ${preferHttp ? "HTTPS" : "TCP"} …`);
+    return preferHttp ? await loadOverHttp(url) : await loadOverTcp(url);
+  }
 
-  await client.end();
-
-  return rows.map((row) => ({
-    id: row.id,
-    chatId: row.chatId,
-    role: row.role,
-    parts: row.parts,
-    createdAt: row.createdAt.toISOString(),
-  }));
+  // Try TCP first, then fall back to HTTPS rather than failing outright.
+  console.log("Reading Message_v2 over TCP …");
+  try {
+    return await loadOverTcp(url);
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code !== "CONNECT_TIMEOUT" && code !== "ECONNREFUSED") {
+      throw error;
+    }
+    console.log(`  TCP unavailable (${code}); retrying over HTTPS …`);
+    return await loadOverHttp(url);
+  }
 }
 
 function loadFromFile(path: string): CorpusRow[] {
@@ -200,7 +284,7 @@ async function main() {
 
   const rows = args.replay
     ? loadFromFile(args.replay)
-    : await loadFromDatabase();
+    : await loadFromDatabase(args.http);
 
   if (args.dump) {
     fs.writeFileSync(args.dump, JSON.stringify(rows, null, 2));

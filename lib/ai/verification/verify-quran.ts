@@ -1,6 +1,6 @@
 import { getSurahMetadata } from "@/lib/quran-metadata";
 import { validateReference } from "@/lib/quran-reference-parser";
-import { normalizeSurahName, quoteMatches, similarity } from "./normalize";
+import { normalizeSurahName, quoteMatchesAny, similarity } from "./normalize";
 import { type Citation, parseQuranHref } from "./parse-citations";
 import { quranKey, type RetrievedSet } from "./retrieved-set";
 import {
@@ -135,15 +135,20 @@ export function verifyQuranCitation(
 
   // ── Check 4: quote fidelity ───────────────────────────────────────────────
   if (citation.quote) {
-    const sourceText = present
-      .map((ayah) => retrieved.get(quranKey(surah, ayah))?.text ?? "")
+    const entries = present.map((ayah) => retrieved.get(quranKey(surah, ayah)));
+    const englishSource = entries
+      .map((entry) => entry?.text ?? "")
+      .filter(Boolean)
+      .join(" ");
+    const arabicSource = entries
+      .map((entry) => entry?.textArabic ?? "")
       .filter(Boolean)
       .join(" ");
 
-    if (sourceText) {
-      const match = quoteMatches(
+    if (englishSource || arabicSource) {
+      const match = quoteMatchesAny(
         citation.quote,
-        sourceText,
+        [englishSource, arabicSource],
         QUOTE_SIMILARITY_THRESHOLD
       );
 

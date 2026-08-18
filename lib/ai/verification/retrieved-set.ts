@@ -20,6 +20,11 @@ import { resolveCollection } from "./parse-citations";
 export type RetrievedEntry = {
   /** English text as retrieval returned it — the basis for quote checking. */
   text: string;
+  /**
+   * Arabic text, when retrieval returned it. Non-English responses quote the
+   * Arabic, so fidelity must be checkable against it too.
+   */
+  textArabic?: string;
   /** Present for hadith only. */
   grade?: string;
   sourceUrl?: string;
@@ -185,6 +190,7 @@ export class RetrievedSet {
       if (ref) {
         this.add(quranKey(ref.surah, ref.ayah), {
           text: asString(verse.english),
+          textArabic: asString(verse.arabic) || undefined,
           viaContext: false,
         });
 
@@ -234,6 +240,7 @@ export class RetrievedSet {
       if (slug && number !== undefined) {
         this.add(hadithKey(slug, number), {
           text: asString(hadith.english),
+          textArabic: asString(hadith.arabic) || undefined,
           grade: asString(hadith.grade) || undefined,
           sourceUrl: asString(hadith.sourceUrl) || undefined,
           viaContext: false,
@@ -266,6 +273,7 @@ export class RetrievedSet {
         }
         this.add(quranKey(surah, verse.ayahNumber), {
           text: asString(verse.textEnglish),
+          textArabic: asString(verse.textArabic) || undefined,
           viaContext: verse.isContext === true,
         });
       }

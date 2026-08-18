@@ -110,7 +110,6 @@ const QURAN_HREF = /quran\.com\/(?:en\/)?(\d{1,3})(?:[/:](\d{1,3}))?/i;
 const HADITH_HREF = /sunnah\.com\/([a-z0-9]+)/i;
 const QURAN_HOST = /quran\.com/i;
 const HADITH_HOST = /sunnah\.com/i;
-const QUOTED_SPAN = /["\u201C]([^"\u201C\u201D]{8,600})["\u201D]/g;
 
 /**
  * How far from a citation a quoted span may sit and still be attributed to it.
@@ -168,22 +167,82 @@ export function parseHadithHref(href: string): { collection?: string } {
   return { collection: match[1].toLowerCase() };
 }
 
-/** Collect quoted spans with their offsets so citations can claim the nearest. */
-function collectQuotes(
-  text: string
-): Array<{ start: number; end: number; body: string }> {
-  const quotes: Array<{ start: number; end: number; body: string }> = [];
-  const pattern = QUOTED_SPAN;
-  pattern.lastIndex = 0;
-  let match = pattern.exec(text);
-  while (match !== null) {
-    quotes.push({
-      start: match.index,
-      end: match.index + match[0].length,
-      body: match[1],
-    });
-    match = pattern.exec(text);
+/** Markdown structure that must never appear inside a scripture quote. */
+const MARKDOWN_NOISE = /\]\(|\*\*|^\s*[*>-]\s/;
+
+/** Directional quotes pair unambiguously, so they may span lines. */
+const SMART_QUOTED = /\u201C([^\u201C\u201D]{8,600})\u201D/g;
+
+const MIN_QUOTE = 8;
+const MAX_QUOTE = 600;
+
+type QuoteSpan = { start: number; end: number; body: string };
+
+function isPlausibleQuote(body: string): boolean {
+  return (
+    body.length >= MIN_QUOTE &&
+    body.length <= MAX_QUOTE &&
+    !MARKDOWN_NOISE.test(body)
+  );
+}
+
+/**
+ * Collect quoted spans with their offsets so citations can claim the nearest.
+ *
+ * Straight quotes are paired WITHIN A SINGLE LINE. Pairing them across the
+ * whole response is wrong: responses routinely contain an odd number of `"`
+ * characters (retrieved hadith text frequently embeds one), and a single
+ * unpaired quote inverts every subsequent pairing so that the captured span
+ * becomes the prose *between* two real quotes rather than a quote itself.
+ * That produced large markdown fragments masquerading as scripture, which
+ * then failed quote-fidelity and manufactured violations en masse.
+ *
+ * Spans carrying markdown structure are rejected for the same reason.
+ */
+function collectQuotes(text: string): QuoteSpan[] {
+  const quotes: QuoteSpan[] = [];
+
+  SMART_QUOTED.lastIndex = 0;
+  let smart = SMART_QUOTED.exec(text);
+  while (smart !== null) {
+    if (isPlausibleQuote(smart[1])) {
+      quotes.push({
+        start: smart.index,
+        end: smart.index + smart[0].length,
+        body: smart[1],
+      });
+    }
+    smart = SMART_QUOTED.exec(text);
   }
+
+  let lineStart = 0;
+  for (const line of text.split("\n")) {
+    const marks: number[] = [];
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') {
+        marks.push(i);
+      }
+    }
+
+    // Consume marks in pairs; a trailing unpaired mark is simply dropped
+    // rather than being allowed to shift the pairing of later lines.
+    for (let i = 0; i + 1 < marks.length; i += 2) {
+      const open = marks[i];
+      const close = marks[i + 1];
+      const body = line.slice(open + 1, close);
+      if (isPlausibleQuote(body)) {
+        quotes.push({
+          start: lineStart + open,
+          end: lineStart + close + 1,
+          body,
+        });
+      }
+    }
+
+    lineStart += line.length + 1;
+  }
+
+  quotes.sort((a, b) => a.start - b.start);
   return quotes;
 }
 
@@ -196,7 +255,7 @@ function collectQuotes(
  */
 function quoteDistance(
   citation: Citation,
-  quote: { start: number; end: number }
+  quote: QuoteSpan
 ): number | undefined {
   const citeStart = citation.charOffset;
   const citeEnd = citation.charOffset + citation.raw.length;
@@ -229,10 +288,7 @@ function quoteDistance(
  * Sorting all candidate pairs by distance first makes the nearest pairing win
  * regardless of document order.
  */
-function attachQuotes(
-  citations: Citation[],
-  quotes: Array<{ start: number; end: number; body: string }>
-): void {
+function attachQuotes(citations: Citation[], quotes: QuoteSpan[]): void {
   const pairs: Array<{ citation: number; quote: number; distance: number }> =
     [];
 

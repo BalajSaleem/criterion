@@ -183,6 +183,43 @@ section("Parsing — quote attachment");
   check("  → distant citation left unquoted", baqarah?.quote === undefined);
 }
 
+{
+  // Regression: straight quotes were paired across the whole response, so one
+  // unpaired `"` inverted the pairing and captured the prose BETWEEN two real
+  // quotes as though it were scripture. Confirmed against production data.
+  const cites = parseCitations(
+    'The Prophet said "a genuine first quotation here" ([Sahih Muslim 294](https://sunnah.com/muslim:294))\n' +
+      "*   **General Intimacy:** more prose follows here\n" +
+      "and later Al-Baqarah 2:153 appears in the text."
+  );
+  const baqarah = cites.find((c) => c.ayahStart === 153);
+  check(
+    "unpaired quote does not capture inter-quote prose",
+    baqarah?.quote === undefined,
+    `got: ${baqarah?.quote?.slice(0, 60)}`
+  );
+}
+{
+  const cites = parseCitations(
+    "See ([An-Nasr 110:3](https://quran.com/110/3))\n\nMany scholars mention Al-A'la 87:8 here."
+  );
+  const ala = cites.find((c) => c.surah === 87);
+  check(
+    "markdown fragments are never treated as quotes",
+    ala?.quote === undefined
+  );
+}
+{
+  // A legitimate inline quote on one line must still be captured.
+  const cites = parseCitations(
+    'Allah says "Indeed, Allah is with the patient" in Al-Baqarah 2:153.'
+  );
+  check(
+    "single-line quote still attaches",
+    cites[0]?.quote === "Indeed, Allah is with the patient"
+  );
+}
+
 // ── Normalization ───────────────────────────────────────────────────────────
 section("Normalization");
 check(

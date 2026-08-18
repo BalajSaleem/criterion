@@ -198,3 +198,42 @@ function bestWindowSimilarity(quote: string, source: string): number {
   const tail = source.slice(Math.max(0, source.length - quote.length));
   return Math.max(best, similarity(quote, tail));
 }
+
+/**
+ * Best match for a quote across several candidate source texts.
+ *
+ * Responses in Arabic, Urdu or Turkish quote the Arabic of a verse rather than
+ * the English translation, so the English text alone is not a sufficient
+ * basis for judging fidelity. Checking every text retrieval returned for a
+ * reference keeps a correct Arabic quotation from being graded a fabrication.
+ */
+export function quoteMatchesAny(
+  quote: string,
+  sources: (string | undefined)[],
+  threshold: number
+): { matched: boolean; mode: "exact" | "fuzzy" | "none"; score: number } {
+  let best: {
+    matched: boolean;
+    mode: "exact" | "fuzzy" | "none";
+    score: number;
+  } = {
+    matched: false,
+    mode: "none",
+    score: 0,
+  };
+
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+    const result = quoteMatches(quote, source, threshold);
+    if (result.mode === "exact") {
+      return result;
+    }
+    if (result.score > best.score) {
+      best = result;
+    }
+  }
+
+  return best;
+}
