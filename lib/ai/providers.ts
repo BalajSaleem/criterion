@@ -33,14 +33,14 @@ export const myProvider = isTestEnvironment
   : customProvider({
       languageModels: {
         "chat-model": wrapLanguageModel({
-          model: gateway.languageModel("deepseek/deepseek-v4-flash-0731"),
+          model: gateway.languageModel("zai/glm-5.3-flash"),
           middleware,
         }),
         "chat-model-reasoning": wrapLanguageModel({
-          model: gateway.languageModel("deepseek/deepseek-v4-flash-0731"),
+          model: gateway.languageModel("zai/glm-5.3-flash"),
           middleware,
         }),
-        "title-model": gateway.languageModel("deepseek/deepseek-v4-flash-0731"),
-        "artifact-model": gateway.languageModel("deepseek/deepseek-v4-flash-0731"),
+        "title-model": gateway.languageModel("zai/glm-5.3-flash"),
+        "artifact-model": gateway.languageModel("zai/glm-5.3-flash"),
       },
     });
