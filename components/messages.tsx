@@ -62,18 +62,15 @@ function PureMessages({
   // The end-of-conversation prompt earns its place only once the chat is
   // substantive and settled. It anchors to the last assistant message, which
   // is what the conversation-scope feedback row references.
-  const lastAssistantMessage = messages.findLast(
-    (currentMessage) => currentMessage.role === "assistant"
-  );
+  const lastMessage = messages.at(-1);
   const assistantMessageCount = messages.filter(
     (currentMessage) => currentMessage.role === "assistant"
   ).length;
   const showFeedbackPrompt =
     !isReadonly &&
     status === "ready" &&
-    assistantMessageCount >= MIN_ASSISTANT_MESSAGES_FOR_PROMPT &&
-    lastAssistantMessage !== undefined &&
-    messages.at(-1)?.role === "assistant";
+    lastMessage?.role === "assistant" &&
+    assistantMessageCount >= MIN_ASSISTANT_MESSAGES_FOR_PROMPT;
 
   return (
     <div
@@ -111,8 +108,8 @@ function PureMessages({
             messages.length > 0 &&
             messages.at(-1)?.role === "user" && <ThinkingMessage />}
 
-          {showFeedbackPrompt && lastAssistantMessage && (
-            <FeedbackPrompt chatId={chatId} messageId={lastAssistantMessage.id} />
+          {showFeedbackPrompt && lastMessage && (
+            <FeedbackPrompt chatId={chatId} messageId={lastMessage.id} />
           )}
 
           <div

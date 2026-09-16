@@ -1,9 +1,6 @@
 import { z } from "zod";
-import {
-  FEEDBACK_REASONS,
-  FEEDBACK_SCOPES,
-  type FeedbackSource,
-} from "@/lib/db/schema";
+import { FEEDBACK_REASONS, type FeedbackSource } from "@/lib/db/schema";
+import { fetchWithErrorHandlers } from "@/lib/utils";
 
 /** Free-text is capped so a single submission can't be used to bloat the table. */
 export const MAX_COMMENT_LENGTH = 2000;
@@ -11,56 +8,69 @@ export const MAX_COMMENT_LENGTH = 2000;
 /** Conversation-level prompt only appears once a chat is substantive. */
 export const MIN_ASSISTANT_MESSAGES_FOR_PROMPT = 3;
 
-export const RATING_MIN = 1;
 export const RATING_MAX = 5;
 
+const feedbackBase = {
+  chatId: z.string().uuid(),
+  messageId: z.string().uuid(),
+  comment: z
+    .string()
+    .trim()
+    .max(MAX_COMMENT_LENGTH)
+    .transform((value) => (value.length > 0 ? value : undefined))
+    .optional(),
+};
+
 /**
- * Accepts the original `{ chatId, messageId, type }` body unchanged so existing
- * callers keep working, and layers the new optional fields on top.
+ * Splitting on `scope` makes the cross-scope combinations unrepresentable
+ * rather than something to reject by hand: a thumb and a reason belong only to
+ * a message, a rating only to a conversation.
  */
-export const voteRequestSchema = z
-  .object({
-    chatId: z.string().uuid(),
-    messageId: z.string().uuid(),
-    type: z.enum(["up", "down"]).optional(),
-    scope: z.enum(FEEDBACK_SCOPES).default("message"),
-    rating: z.number().int().min(RATING_MIN).max(RATING_MAX).optional(),
+const feedbackRequest = z.discriminatedUnion("scope", [
+  z.object({
+    ...feedbackBase,
+    scope: z.literal("message"),
+    type: z.enum(["up", "down"], {
+      required_error: "A message-scope submission requires a thumb.",
+    }),
     reason: z.enum(FEEDBACK_REASONS).optional(),
-    comment: z
-      .string()
-      .trim()
-      .max(MAX_COMMENT_LENGTH)
-      .transform((value) => (value.length > 0 ? value : undefined))
-      .optional(),
-  })
-  .refine(
+  }),
+  z.object({
+    ...feedbackBase,
+    scope: z.literal("conversation"),
+    rating: z.number().int().min(1).max(RATING_MAX).optional(),
+  }),
+]);
+
+/** The request body clients send. */
+export type FeedbackRequestBody = z.input<typeof feedbackRequest>;
+
+export const voteRequestSchema = z
+  .preprocess(
+    // A browser still running the pre-feedback bundle posts no scope. Defaulting
+    // here rather than on the literal, which a discriminated union cannot match.
     (body) =>
-      body.scope === "message"
-        ? body.type !== undefined
-        : body.type === undefined,
-    {
-      message:
-        "A message-scope submission requires a thumb; a conversation-scope one must not carry a thumb.",
-    }
+      body && typeof body === "object" && !("scope" in body)
+        ? { ...body, scope: "message" }
+        : body,
+    feedbackRequest
   )
   .refine(
     (body) =>
-      body.scope === "conversation"
-        ? body.rating !== undefined || body.comment !== undefined
-        : true,
+      body.scope !== "conversation" ||
+      body.rating !== undefined ||
+      body.comment !== undefined,
     { message: "A conversation-scope submission needs a rating or a comment." }
-  )
-  .refine((body) => (body.scope === "conversation" ? !body.reason : true), {
-    message: "A reason only applies to message-scope feedback.",
-  })
-  .refine(
-    (body) => (body.scope === "message" ? body.rating === undefined : true),
-    {
-      message: "A rating only applies to conversation-scope feedback.",
-    }
   );
 
-export type VoteRequest = z.infer<typeof voteRequestSchema>;
+/** POSTs feedback; throws a ChatSDKError on a non-ok response. */
+export function submitFeedback(body: FeedbackRequestBody) {
+  return fetchWithErrorHandlers("/api/vote", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
 
 /** Matches the trailing `surah:ayah` (or `surah:start-end`) of a formatted reference. */
 const QURAN_REF_PATTERN = /(\d{1,3}:\d{1,3}(?:-\d{1,3})?)\s*$/;
@@ -76,24 +86,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function collectQuranSearchSources(output: unknown, into: FeedbackSource[]) {
-  if (!(isRecord(output) && Array.isArray(output.verses))) {
+/** Both Quran tools return `{ reference }` rows, under different keys. */
+function collectQuranSources(
+  output: unknown,
+  key: "verses" | "results",
+  into: FeedbackSource[]
+) {
+  if (!isRecord(output)) {
     return;
   }
-  for (const verse of output.verses) {
-    const ref = isRecord(verse) ? toQuranRef(verse.reference) : null;
-    if (ref) {
-      into.push({ type: "quran", ref });
-    }
-  }
-}
-
-function collectQuranReferenceSources(output: unknown, into: FeedbackSource[]) {
-  if (!(isRecord(output) && Array.isArray(output.results))) {
+  const rows = output[key];
+  if (!Array.isArray(rows)) {
     return;
   }
-  for (const result of output.results) {
-    const ref = isRecord(result) ? toQuranRef(result.reference) : null;
+  for (const row of rows) {
+    const ref = isRecord(row) ? toQuranRef(row.reference) : null;
     if (ref) {
       into.push({ type: "quran", ref });
     }
@@ -140,10 +147,10 @@ export function extractSourcesFromParts(parts: unknown): FeedbackSource[] {
 
     switch (part.type) {
       case "tool-queryQuran":
-        collectQuranSearchSources(part.output, sources);
+        collectQuranSources(part.output, "verses", sources);
         break;
       case "tool-getQuranByReference":
-        collectQuranReferenceSources(part.output, sources);
+        collectQuranSources(part.output, "results", sources);
         break;
       case "tool-queryHadith":
         collectHadithSources(part.output, sources);

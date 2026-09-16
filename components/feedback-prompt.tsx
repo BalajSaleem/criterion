@@ -3,39 +3,15 @@
 import { motion } from "framer-motion";
 import { StarIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { useIsClient, useLocalStorage } from "usehooks-ts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MAX_COMMENT_LENGTH, RATING_MAX } from "@/lib/feedback";
+import { MAX_COMMENT_LENGTH, RATING_MAX, submitFeedback } from "@/lib/feedback";
 import { cn } from "@/lib/utils";
 
 const RATINGS = Array.from({ length: RATING_MAX }, (_, index) => index + 1);
-
-function storageKey(chatId: string) {
-  return `criterion-feedback-${chatId}`;
-}
-
-/**
- * localStorage keeps the prompt from reappearing for someone who has already
- * answered or dismissed it. The partial unique index on the Vote_v2 table is
- * the real guarantee of one rating per chat; this is only about not nagging.
- */
-function readDismissed(chatId: string): boolean {
-  try {
-    return window.localStorage.getItem(storageKey(chatId)) !== null;
-  } catch (_error) {
-    return false;
-  }
-}
-
-function markDismissed(chatId: string) {
-  try {
-    window.localStorage.setItem(storageKey(chatId), new Date().toISOString());
-  } catch (_error) {
-    // Private browsing or blocked site data — the prompt simply may reappear.
-  }
-}
 
 export function FeedbackPrompt({
   chatId,
@@ -46,25 +22,24 @@ export function FeedbackPrompt({
   messageId: string;
 }) {
   const t = useTranslations("feedback");
-  const [isVisible, setIsVisible] = useState(false);
+  // `initializeWithValue: false` keeps the first client render matching the
+  // server's, which reading localStorage in a state initializer would break.
+  const [isDismissed, setIsDismissed] = useLocalStorage(
+    `criterion-feedback-${chatId}`,
+    false,
+    { initializeWithValue: false }
+  );
+  const isClient = useIsClient();
   const [rating, setRating] = useState<number | null>(null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Read on the client only, so the server render and first paint agree.
-  useEffect(() => {
-    setIsVisible(!readDismissed(chatId));
-  }, [chatId]);
-
-  if (!isVisible) {
+  if (!isClient || isDismissed) {
     return null;
   }
 
-  const dismiss = () => {
-    markDismissed(chatId);
-    setIsVisible(false);
-  };
+  const dismiss = () => setIsDismissed(true);
 
   const handleSubmit = () => {
     const trimmedComment = comment.trim();
@@ -76,23 +51,15 @@ export function FeedbackPrompt({
 
     setIsSubmitting(true);
 
-    fetch("/api/vote", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatId,
-        messageId,
-        scope: "conversation",
-        ...(rating === null ? {} : { rating }),
-        ...(trimmedComment ? { comment: trimmedComment } : {}),
-      }),
+    submitFeedback({
+      chatId,
+      messageId,
+      scope: "conversation",
+      ...(rating === null ? {} : { rating }),
+      ...(trimmedComment ? { comment: trimmedComment } : {}),
     })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to submit feedback");
-        }
-        markDismissed(chatId);
-        setIsVisible(false);
+      .then(() => {
+        setIsDismissed(true);
         toast.success(t("promptThanks"));
       })
       .catch(() => toast.error(t("submitFailed")))

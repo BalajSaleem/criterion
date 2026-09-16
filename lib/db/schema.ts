@@ -101,7 +101,6 @@ export type FeedbackSource =
   | { type: "hadith"; collection: string; ref: string };
 
 export const FEEDBACK_SCOPES = ["message", "conversation"] as const;
-export type FeedbackScope = (typeof FEEDBACK_SCOPES)[number];
 
 export const FEEDBACK_REASONS = [
   "inaccurate-citation",

@@ -13,7 +13,7 @@ import {
   type FeedbackReason,
   type Vote,
 } from "@/lib/db/schema";
-import { MAX_COMMENT_LENGTH } from "@/lib/feedback";
+import { MAX_COMMENT_LENGTH, submitFeedback } from "@/lib/feedback";
 import type { ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Action, Actions } from "./elements/actions";
@@ -21,14 +21,6 @@ import { CopyIcon, PencilEditIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
 
 /** Stands in for the server-generated row id until the cache is revalidated. */
 const OPTIMISTIC_VOTE_ID = "00000000-0000-0000-0000-000000000000";
-
-type VoteBody = {
-  chatId: string;
-  messageId: string;
-  type: "up" | "down";
-  reason?: FeedbackReason;
-  comment?: string;
-};
 
 export function PureMessageActions({
   chatId,
@@ -114,30 +106,21 @@ export function PureMessageActions({
     );
   };
 
-  const sendVote = (body: VoteBody) =>
-    fetch("/api/vote", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to submit feedback");
-      }
-      return response;
-    });
-
   const handleUpvote = () => {
     // Upvotes stay a single click — friction here would cost the cheap signal.
     setIsReasonPanelOpen(false);
 
-    toast.promise(sendVote({ chatId, messageId: message.id, type: "up" }), {
-      loading: t("submitting"),
-      success: () => {
+    submitFeedback({
+      chatId,
+      messageId: message.id,
+      scope: "message",
+      type: "up",
+    })
+      .then(() => {
         applyOptimisticVote(true);
-        return t("upvoteThanks");
-      },
-      error: t("submitFailed"),
-    });
+        toast.success(t("upvoteThanks"));
+      })
+      .catch(() => toast.error(t("submitFailed")));
   };
 
   const handleDownvote = () => {
@@ -145,7 +128,12 @@ export function PureMessageActions({
     // even if the panel is dismissed without one.
     setIsReasonPanelOpen(true);
 
-    sendVote({ chatId, messageId: message.id, type: "down" })
+    submitFeedback({
+      chatId,
+      messageId: message.id,
+      scope: "message",
+      type: "down",
+    })
       .then(() => applyOptimisticVote(false))
       .catch(() => toast.error(t("submitFailed")));
   };
@@ -159,9 +147,10 @@ export function PureMessageActions({
 
     const trimmedComment = comment.trim();
 
-    sendVote({
+    submitFeedback({
       chatId,
       messageId: message.id,
+      scope: "message",
       type: "down",
       ...(selectedReason ? { reason: selectedReason } : {}),
       ...(trimmedComment ? { comment: trimmedComment } : {}),

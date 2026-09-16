@@ -62,8 +62,8 @@ export async function PATCH(request: Request) {
     ).toResponse();
   }
 
-  const { chatId, messageId, type, scope, rating, reason, comment } =
-    parsed.data;
+  const feedback = parsed.data;
+  const { chatId, messageId } = feedback;
 
   const session = await auth();
 
@@ -88,30 +88,25 @@ export async function PATCH(request: Request) {
     return new ChatSDKError("not_found:vote").toResponse();
   }
 
-  if (scope === "conversation") {
-    await submitConversationFeedback({ chatId, messageId, rating, comment });
+  if (feedback.scope === "conversation") {
+    await submitConversationFeedback({
+      chatId,
+      messageId,
+      rating: feedback.rating,
+      comment: feedback.comment,
+    });
     return new Response("Feedback submitted", { status: 200 });
   }
-
-  // `type` is guaranteed present for message scope by the request schema.
-  if (!type) {
-    return new ChatSDKError(
-      "bad_request:api",
-      "Parameter type is required."
-    ).toResponse();
-  }
-
-  // Derived here rather than trusted from the client, so feedback can never be
-  // attributed to sources the answer did not actually cite.
-  const sources = extractSourcesFromParts(ratedMessage.parts);
 
   await voteMessage({
     chatId,
     messageId,
-    type,
-    reason,
-    comment,
-    sources,
+    type: feedback.type,
+    reason: feedback.reason,
+    comment: feedback.comment,
+    // Derived here rather than trusted from the client, so feedback can never
+    // be attributed to sources the answer did not actually cite.
+    sources: extractSourcesFromParts(ratedMessage.parts),
   });
 
   return new Response("Message voted", { status: 200 });
