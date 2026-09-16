@@ -1,6 +1,13 @@
 import { auth } from "@/app/(auth)/auth";
-import { getChatById, getVotesByChatId, voteMessage } from "@/lib/db/queries";
+import {
+  getChatById,
+  getMessageById,
+  getVotesByChatId,
+  submitConversationFeedback,
+  voteMessage,
+} from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
+import { extractSourcesFromParts, voteRequestSchema } from "@/lib/feedback";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -35,19 +42,28 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const {
-    chatId,
-    messageId,
-    type,
-  }: { chatId: string; messageId: string; type: "up" | "down" } =
-    await request.json();
+  let body: unknown;
 
-  if (!chatId || !messageId || !type) {
+  try {
+    body = await request.json();
+  } catch (_error) {
     return new ChatSDKError(
       "bad_request:api",
-      "Parameters chatId, messageId, and type are required."
+      "Request body must be valid JSON."
     ).toResponse();
   }
+
+  const parsed = voteRequestSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return new ChatSDKError(
+      "bad_request:api",
+      parsed.error.issues.at(0)?.message ?? "Invalid feedback payload."
+    ).toResponse();
+  }
+
+  const feedback = parsed.data;
+  const { chatId, messageId } = feedback;
 
   const session = await auth();
 
@@ -65,10 +81,32 @@ export async function PATCH(request: Request) {
     return new ChatSDKError("forbidden:vote").toResponse();
   }
 
+  // Guards against feedback being filed against a message from another chat.
+  const [ratedMessage] = await getMessageById({ id: messageId });
+
+  if (!ratedMessage || ratedMessage.chatId !== chatId) {
+    return new ChatSDKError("not_found:vote").toResponse();
+  }
+
+  if (feedback.scope === "conversation") {
+    await submitConversationFeedback({
+      chatId,
+      messageId,
+      rating: feedback.rating,
+      comment: feedback.comment,
+    });
+    return new Response("Feedback submitted", { status: 200 });
+  }
+
   await voteMessage({
     chatId,
     messageId,
-    type,
+    type: feedback.type,
+    reason: feedback.reason,
+    comment: feedback.comment,
+    // Derived here rather than trusted from the client, so feedback can never
+    // be attributed to sources the answer did not actually cite.
+    sources: extractSourcesFromParts(ratedMessage.parts),
   });
 
   return new Response("Message voted", { status: 200 });

@@ -1,12 +1,26 @@
+"use client";
+
 import equal from "fast-deep-equal";
-import { memo } from "react";
+import { useTranslations } from "next-intl";
+import { memo, useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { useCopyToClipboard } from "usehooks-ts";
-import type { Vote } from "@/lib/db/schema";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  FEEDBACK_REASONS,
+  type FeedbackReason,
+  type Vote,
+} from "@/lib/db/schema";
+import { MAX_COMMENT_LENGTH, submitFeedback } from "@/lib/feedback";
 import type { ChatMessage } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { Action, Actions } from "./elements/actions";
 import { CopyIcon, PencilEditIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
+
+/** Stands in for the server-generated row id until the cache is revalidated. */
+const OPTIMISTIC_VOTE_ID = "00000000-0000-0000-0000-000000000000";
 
 export function PureMessageActions({
   chatId,
@@ -21,8 +35,15 @@ export function PureMessageActions({
   isLoading: boolean;
   setMode?: (mode: "view" | "edit") => void;
 }) {
+  const t = useTranslations("feedback");
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
+  const [isReasonPanelOpen, setIsReasonPanelOpen] = useState(false);
+  const [selectedReason, setSelectedReason] = useState<FeedbackReason | null>(
+    null
+  );
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isLoading) {
     return null;
@@ -36,12 +57,113 @@ export function PureMessageActions({
 
   const handleCopy = async () => {
     if (!textFromParts) {
-      toast.error("There's no text to copy!");
+      toast.error(t("copyEmpty"));
       return;
     }
 
     await copyToClipboard(textFromParts);
-    toast.success("Copied to clipboard!");
+    toast.success(t("copied"));
+  };
+
+  /**
+   * Only `isUpvoted` drives the rendered thumbs, so the placeholder fills the
+   * remaining columns with what the server will have written rather than
+   * pretending to know the generated id.
+   */
+  const applyOptimisticVote = (
+    isUpvoted: boolean,
+    reason: FeedbackReason | null = null,
+    submittedComment: string | null = null
+  ) => {
+    mutate<Vote[]>(
+      `/api/vote?chatId=${chatId}`,
+      (currentVotes) => {
+        if (!currentVotes) {
+          return [];
+        }
+
+        const votesWithoutCurrent = currentVotes.filter(
+          (currentVote) => currentVote.messageId !== message.id
+        );
+
+        const optimisticVote: Vote = {
+          id: vote?.id ?? OPTIMISTIC_VOTE_ID,
+          chatId,
+          messageId: message.id,
+          isUpvoted,
+          scope: "message",
+          rating: null,
+          reason,
+          comment: submittedComment,
+          sources: vote?.sources ?? null,
+          createdAt: vote?.createdAt ?? new Date(),
+          updatedAt: new Date(),
+        };
+
+        return [...votesWithoutCurrent, optimisticVote];
+      },
+      { revalidate: false }
+    );
+  };
+
+  const handleUpvote = () => {
+    // Upvotes stay a single click — friction here would cost the cheap signal.
+    setIsReasonPanelOpen(false);
+
+    submitFeedback({
+      chatId,
+      messageId: message.id,
+      scope: "message",
+      type: "up",
+    })
+      .then(() => {
+        applyOptimisticVote(true);
+        toast.success(t("upvoteThanks"));
+      })
+      .catch(() => toast.error(t("submitFailed")));
+  };
+
+  const handleDownvote = () => {
+    // Record the thumb immediately, then invite a reason. The downvote counts
+    // even if the panel is dismissed without one.
+    setIsReasonPanelOpen(true);
+
+    submitFeedback({
+      chatId,
+      messageId: message.id,
+      scope: "message",
+      type: "down",
+    })
+      .then(() => applyOptimisticVote(false))
+      .catch(() => toast.error(t("submitFailed")));
+  };
+
+  const handleReasonSubmit = () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const trimmedComment = comment.trim();
+
+    submitFeedback({
+      chatId,
+      messageId: message.id,
+      scope: "message",
+      type: "down",
+      ...(selectedReason ? { reason: selectedReason } : {}),
+      ...(trimmedComment ? { comment: trimmedComment } : {}),
+    })
+      .then(() => {
+        applyOptimisticVote(false, selectedReason, trimmedComment || null);
+        setIsReasonPanelOpen(false);
+        setSelectedReason(null);
+        setComment("");
+        toast.success(t("downvoteThanks"));
+      })
+      .catch(() => toast.error(t("submitFailed")))
+      .finally(() => setIsSubmitting(false));
   };
 
   // User messages get edit (on hover) and copy actions
@@ -67,109 +189,96 @@ export function PureMessageActions({
   }
 
   return (
-    <Actions className="-ml-0.5">
-      <Action onClick={handleCopy} tooltip="Copy">
-        <CopyIcon />
-      </Action>
+    <div className="flex flex-col gap-2">
+      <Actions className="-ml-0.5">
+        <Action onClick={handleCopy} tooltip="Copy">
+          <CopyIcon />
+        </Action>
 
-      <Action
-        data-testid="message-upvote"
-        disabled={vote?.isUpvoted}
-        onClick={() => {
-          const upvote = fetch("/api/vote", {
-            method: "PATCH",
-            body: JSON.stringify({
-              chatId,
-              messageId: message.id,
-              type: "up",
-            }),
-          });
+        <Action
+          data-testid="message-upvote"
+          disabled={vote?.isUpvoted === true}
+          onClick={handleUpvote}
+          tooltip={t("upvoteTooltip")}
+        >
+          <ThumbUpIcon />
+        </Action>
 
-          toast.promise(upvote, {
-            loading: "Upvoting Response...",
-            success: () => {
-              mutate<Vote[]>(
-                `/api/vote?chatId=${chatId}`,
-                (currentVotes) => {
-                  if (!currentVotes) {
-                    return [];
-                  }
+        <Action
+          data-testid="message-downvote"
+          onClick={handleDownvote}
+          tooltip={t("downvoteTooltip")}
+        >
+          <ThumbDownIcon />
+        </Action>
+      </Actions>
 
-                  const votesWithoutCurrent = currentVotes.filter(
-                    (currentVote) => currentVote.messageId !== message.id
-                  );
+      {isReasonPanelOpen && (
+        <div
+          className="rounded-lg border bg-muted/40 p-3 text-sm"
+          data-testid="downvote-reason-panel"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-medium">{t("reasonTitle")}</p>
+            <Button
+              aria-label={t("dismiss")}
+              className="-mt-1 -mr-1 size-7 shrink-0 p-0 text-muted-foreground"
+              onClick={() => setIsReasonPanelOpen(false)}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              &times;
+            </Button>
+          </div>
 
-                  return [
-                    ...votesWithoutCurrent,
-                    {
-                      chatId,
-                      messageId: message.id,
-                      isUpvoted: true,
-                    },
-                  ];
-                },
-                { revalidate: false }
-              );
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {FEEDBACK_REASONS.map((reason) => (
+              <button
+                aria-pressed={selectedReason === reason}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                  selectedReason === reason
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-background hover:bg-accent"
+                )}
+                data-testid={`downvote-reason-${reason}`}
+                key={reason}
+                onClick={() =>
+                  setSelectedReason((current) =>
+                    current === reason ? null : reason
+                  )
+                }
+                type="button"
+              >
+                {t(`reasons.${reason}`)}
+              </button>
+            ))}
+          </div>
 
-              return "Upvoted Response!";
-            },
-            error: "Failed to upvote response.",
-          });
-        }}
-        tooltip="Upvote Response"
-      >
-        <ThumbUpIcon />
-      </Action>
+          <Textarea
+            className="mt-2 min-h-[60px] resize-none bg-background text-sm"
+            data-testid="downvote-comment"
+            maxLength={MAX_COMMENT_LENGTH}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder={t("reasonPlaceholder")}
+            value={comment}
+          />
 
-      <Action
-        data-testid="message-downvote"
-        disabled={vote && !vote.isUpvoted}
-        onClick={() => {
-          const downvote = fetch("/api/vote", {
-            method: "PATCH",
-            body: JSON.stringify({
-              chatId,
-              messageId: message.id,
-              type: "down",
-            }),
-          });
-
-          toast.promise(downvote, {
-            loading: "Downvoting Response...",
-            success: () => {
-              mutate<Vote[]>(
-                `/api/vote?chatId=${chatId}`,
-                (currentVotes) => {
-                  if (!currentVotes) {
-                    return [];
-                  }
-
-                  const votesWithoutCurrent = currentVotes.filter(
-                    (currentVote) => currentVote.messageId !== message.id
-                  );
-
-                  return [
-                    ...votesWithoutCurrent,
-                    {
-                      chatId,
-                      messageId: message.id,
-                      isUpvoted: false,
-                    },
-                  ];
-                },
-                { revalidate: false }
-              );
-
-              return "Downvoted Response!";
-            },
-            error: "Failed to downvote response.",
-          });
-        }}
-        tooltip="Downvote Response"
-      >
-        <ThumbDownIcon />
-      </Action>
-    </Actions>
+          <div className="mt-2 flex justify-end">
+            <Button
+              data-testid="downvote-submit"
+              disabled={isSubmitting}
+              onClick={handleReasonSubmit}
+              size="sm"
+              type="button"
+            >
+              {t("send")}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -24,6 +24,8 @@ import {
   chat,
   type DBMessage,
   document,
+  type FeedbackReason,
+  type FeedbackSource,
   message,
   type Suggestion,
   stream,
@@ -237,36 +239,119 @@ export async function voteMessage({
   chatId,
   messageId,
   type,
+  reason,
+  comment,
+  sources,
 }: {
   chatId: string;
   messageId: string;
   type: "up" | "down";
+  reason?: FeedbackReason;
+  comment?: string;
+  sources?: FeedbackSource[];
 }) {
   try {
     const [existingVote] = await db
       .select()
       .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
+      .where(
+        and(
+          eq(vote.chatId, chatId),
+          eq(vote.messageId, messageId),
+          eq(vote.scope, "message")
+        )
+      );
 
     if (existingVote) {
+      // Changing a thumb clears any reason/comment attached to the old one,
+      // so a stale "inaccurate citation" never rides along with an upvote.
       return await db
         .update(vote)
-        .set({ isUpvoted: type === "up" })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
+        .set({
+          isUpvoted: type === "up",
+          reason: reason ?? null,
+          comment: comment ?? null,
+          sources: sources ?? existingVote.sources,
+          updatedAt: new Date(),
+        })
+        .where(eq(vote.id, existingVote.id));
     }
+
     return await db.insert(vote).values({
       chatId,
       messageId,
       isUpvoted: type === "up",
+      scope: "message",
+      reason: reason ?? null,
+      comment: comment ?? null,
+      sources: sources ?? null,
     });
   } catch (_error) {
     throw new ChatSDKError("bad_request:database", "Failed to vote message");
   }
 }
 
+/**
+ * Records the end-of-conversation rating. Anchored to the last assistant
+ * message so the messageId foreign key holds; the partial unique index on
+ * (chatId) where scope = 'conversation' keeps it to one per chat, and a
+ * re-submission updates that row rather than failing.
+ */
+export async function submitConversationFeedback({
+  chatId,
+  messageId,
+  rating,
+  comment,
+}: {
+  chatId: string;
+  messageId: string;
+  rating?: number;
+  comment?: string;
+}) {
+  try {
+    const [existingFeedback] = await db
+      .select()
+      .from(vote)
+      .where(and(eq(vote.chatId, chatId), eq(vote.scope, "conversation")));
+
+    if (existingFeedback) {
+      return await db
+        .update(vote)
+        .set({
+          messageId,
+          rating: rating ?? null,
+          comment: comment ?? null,
+          updatedAt: new Date(),
+        })
+        .where(eq(vote.id, existingFeedback.id));
+    }
+
+    return await db.insert(vote).values({
+      chatId,
+      messageId,
+      scope: "conversation",
+      isUpvoted: null,
+      rating: rating ?? null,
+      comment: comment ?? null,
+    });
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to submit conversation feedback"
+    );
+  }
+}
+
+/**
+ * Per-message votes only. Conversation rows anchor to a real messageId, so
+ * without this filter they would surface as a thumb on the final answer.
+ */
 export async function getVotesByChatId({ id }: { id: string }) {
   try {
-    return await db.select().from(vote).where(eq(vote.chatId, id));
+    return await db
+      .select()
+      .from(vote)
+      .where(and(eq(vote.chatId, id), eq(vote.scope, "message")));
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",

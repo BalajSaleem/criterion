@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         </p>
 
         <p>
-          <strong>Last Updated:</strong> January 1, 2026
+          <strong>Last Updated:</strong> September 16, 2026
         </p>
 
         <hr />
@@ -80,6 +80,38 @@ export default function PrivacyPage() {
             people searched for 'patience' this month?")
           </li>
         </ul>
+
+        <h3>1.4 Feedback You Submit</h3>
+        <p>
+          Criterion lets you rate an answer, flag a problem with it, or leave a
+          short comment about how the service is doing. When you do:
+        </p>
+        <ul>
+          <li>
+            We store your rating, the reason you selected (if any), and your
+            comment, alongside the conversation it refers to
+          </li>
+          <li>
+            We record which Quran verses or Hadith narrations the answer cited,
+            so we can find and fix inaccurate sources
+          </li>
+          <li>
+            <strong>We never ask for your email address or any contact
+            details.</strong> Feedback is available to everyone, including
+            visitors without an account
+          </li>
+        </ul>
+        <p>
+          <strong>Purpose:</strong> To find inaccurate or unhelpful answers, to
+          understand whether Criterion is serving you well, and to decide what
+          to improve next. Feedback is stored in our own database and is not
+          shared with any third-party feedback or analytics service.
+        </p>
+        <p>
+          <strong>Control:</strong> Feedback is stored with the chat it refers
+          to, so deleting that chat deletes the feedback along with it. Please
+          do not include personal information in the comment field.
+        </p>
 
         <h3>1.5 Technical Information</h3>
         <p>
@@ -496,7 +528,7 @@ export default function PrivacyPage() {
         </p>
 
         <p className="text-sm text-muted-foreground mt-8">
-          <strong>Last Updated:</strong> January 1, 2026
+          <strong>Last Updated:</strong> September 16, 2026
         </p>
       </article>
     </div>

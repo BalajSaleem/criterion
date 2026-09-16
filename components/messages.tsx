@@ -4,9 +4,11 @@ import { ArrowDownIcon } from "lucide-react";
 import { memo, useEffect } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
+import { MIN_ASSISTANT_MESSAGES_FOR_PROMPT } from "@/lib/feedback";
 import type { ChatMessage } from "@/lib/types";
 import { useDataStream } from "./data-stream-provider";
 import { Conversation, ConversationContent } from "./elements/conversation";
+import { FeedbackPrompt } from "./feedback-prompt";
 import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
 
@@ -57,6 +59,19 @@ function PureMessages({
 
   const showGreeting = messages.length === 0;
 
+  // The end-of-conversation prompt earns its place only once the chat is
+  // substantive and settled. It anchors to the last assistant message, which
+  // is what the conversation-scope feedback row references.
+  const lastMessage = messages.at(-1);
+  const assistantMessageCount = messages.filter(
+    (currentMessage) => currentMessage.role === "assistant"
+  ).length;
+  const showFeedbackPrompt =
+    !isReadonly &&
+    status === "ready" &&
+    lastMessage?.role === "assistant" &&
+    assistantMessageCount >= MIN_ASSISTANT_MESSAGES_FOR_PROMPT;
+
   return (
     <div
       className={showGreeting ? "" : "overscroll-behavior-contain -webkit-overflow-scrolling-touch flex-1 touch-pan-y overflow-y-scroll"}
@@ -92,6 +107,10 @@ function PureMessages({
           {status === "submitted" &&
             messages.length > 0 &&
             messages.at(-1)?.role === "user" && <ThinkingMessage />}
+
+          {showFeedbackPrompt && lastMessage && (
+            <FeedbackPrompt chatId={chatId} messageId={lastMessage.id} />
+          )}
 
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
