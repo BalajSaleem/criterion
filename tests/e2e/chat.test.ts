@@ -139,6 +139,91 @@ test.describe("Chat activity", () => {
     await chatPage.isVoteComplete();
   });
 
+  test("Downvote opens the reason panel and accepts a reason", async () => {
+    await chatPage.sendUserMessage("Why is the sky blue?");
+    await chatPage.isGenerationComplete();
+
+    const assistantMessage = await chatPage.getRecentAssistantMessage();
+
+    if (!assistantMessage) {
+      throw new Error("No assistant message found");
+    }
+
+    // The thumb is recorded straight away, before any reason is given.
+    await assistantMessage.downvote();
+    await chatPage.isVoteComplete();
+
+    await expect(assistantMessage.reasonPanel).toBeVisible();
+
+    await assistantMessage.selectDownvoteReason("inaccurate-citation");
+    await assistantMessage.fillDownvoteComment(
+      "The verse cited does not say this."
+    );
+    await assistantMessage.submitDownvoteReason();
+    await chatPage.isVoteComplete();
+
+    await expect(assistantMessage.reasonPanel).not.toBeVisible();
+  });
+
+  test("Upvote does not open the reason panel", async () => {
+    await chatPage.sendUserMessage("Why is the sky blue?");
+    await chatPage.isGenerationComplete();
+
+    const assistantMessage = await chatPage.getRecentAssistantMessage();
+
+    if (!assistantMessage) {
+      throw new Error("No assistant message found");
+    }
+    await assistantMessage.upvote();
+    await chatPage.isVoteComplete();
+
+    await expect(assistantMessage.reasonPanel).not.toBeVisible();
+  });
+
+  test("Feedback prompt appears once the conversation is substantive", async ({
+    page,
+  }) => {
+    const feedbackPrompt = page.getByTestId("feedback-prompt");
+
+    await chatPage.sendUserMessage("Why is the sky blue?");
+    await chatPage.isGenerationComplete();
+
+    // One exchange is below the threshold.
+    await expect(feedbackPrompt).not.toBeVisible();
+
+    await chatPage.sendUserMessage("Why is the sky blue?");
+    await chatPage.isGenerationComplete();
+    await chatPage.sendUserMessage("Why is the sky blue?");
+    await chatPage.isGenerationComplete();
+
+    await expect(feedbackPrompt).toBeVisible();
+
+    await page.getByTestId("feedback-rating-4").click();
+    await page
+      .getByTestId("feedback-prompt-comment")
+      .fill("Helpful, but I would like Hindi support.");
+    await page.getByTestId("feedback-prompt-submit").click();
+    await chatPage.isVoteComplete();
+
+    await expect(feedbackPrompt).not.toBeVisible();
+  });
+
+  test("Feedback prompt stays dismissed", async ({ page }) => {
+    const feedbackPrompt = page.getByTestId("feedback-prompt");
+
+    for (let exchange = 0; exchange < 3; exchange++) {
+      await chatPage.sendUserMessage("Why is the sky blue?");
+      await chatPage.isGenerationComplete();
+    }
+
+    await expect(feedbackPrompt).toBeVisible();
+    await page.getByTestId("feedback-prompt-dismiss").click();
+    await expect(feedbackPrompt).not.toBeVisible();
+
+    await page.reload();
+    await expect(feedbackPrompt).not.toBeVisible();
+  });
+
   test("Create message from url query", async ({ page }) => {
     await page.goto("/?query=Why is the sky blue?");
 

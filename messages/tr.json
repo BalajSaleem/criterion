@@ -79,5 +79,33 @@
     "searchCta": "Hadis Ara",
     "breadcrumb": "Hadis",
     "home": "Ana Sayfa"
+  },
+  "feedback": {
+    "upvoteTooltip": "İyi cevap",
+    "downvoteTooltip": "Sorun bildir",
+    "upvoteThanks": "Geri bildiriminiz için teşekkürler.",
+    "downvoteThanks": "Teşekkürler — bu, gelişmemize yardımcı oluyor.",
+    "submitting": "Geri bildirim gönderiliyor...",
+    "submitFailed": "Geri bildiriminiz gönderilemedi. Lütfen tekrar deneyin.",
+    "copied": "Panoya kopyalandı!",
+    "copyEmpty": "Kopyalanacak metin yok!",
+    "reasonTitle": "Bu cevapta ne yanlıştı?",
+    "reasonPlaceholder": "Daha fazlasını anlatın (isteğe bağlı)",
+    "reasons": {
+      "inaccurate-citation": "Hatalı kaynak",
+      "not-authentic": "Sahih değil",
+      "unhelpful": "Faydasız",
+      "wrong-tone": "Yanlış üslup",
+      "other": "Başka bir şey"
+    },
+    "promptTitle": "Criterion nasıl gidiyor?",
+    "promptSubtitle": "Bilmemiz gereken bir şey var mı? Ne yanlıştı, ne eksik, sırada ne olsun.",
+    "promptPlaceholder": "Düşünceleriniz (isteğe bağlı)",
+    "promptThanks": "Cezâkallahu hayran — gelişmemize yardım ettiğiniz için teşekkürler.",
+    "promptEmpty": "Göndermeden önce bir puan veya yorum ekleyin.",
+    "ratingLabel": "5 üzerinden {rating} puan ver",
+    "notNow": "Şimdi değil",
+    "dismiss": "Kapat",
+    "send": "Gönder"
   }
 }

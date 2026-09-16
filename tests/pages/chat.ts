@@ -177,6 +177,18 @@ export class ChatPage {
       async downvote() {
         await lastMessageElement.getByTestId("message-downvote").click();
       },
+      reasonPanel: lastMessageElement.getByTestId("downvote-reason-panel"),
+      async selectDownvoteReason(reason: string) {
+        await lastMessageElement
+          .getByTestId(`downvote-reason-${reason}`)
+          .click();
+      },
+      async fillDownvoteComment(comment: string) {
+        await lastMessageElement.getByTestId("downvote-comment").fill(comment);
+      },
+      async submitDownvoteReason() {
+        await lastMessageElement.getByTestId("downvote-submit").click();
+      },
     };
   }
 

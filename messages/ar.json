@@ -79,5 +79,33 @@
     "searchCta": "البحث في الأحاديث",
     "breadcrumb": "الأحاديث",
     "home": "الرئيسية"
+  },
+  "feedback": {
+    "upvoteTooltip": "إجابة جيدة",
+    "downvoteTooltip": "الإبلاغ عن مشكلة",
+    "upvoteThanks": "شكرًا لك على ملاحظاتك.",
+    "downvoteThanks": "شكرًا لك — هذا يساعدنا على التحسين.",
+    "submitting": "جارٍ إرسال الملاحظات...",
+    "submitFailed": "تعذّر إرسال ملاحظاتك. يرجى المحاولة مرة أخرى.",
+    "copied": "تم النسخ إلى الحافظة!",
+    "copyEmpty": "لا يوجد نص لنسخه!",
+    "reasonTitle": "ما الخطأ في هذه الإجابة؟",
+    "reasonPlaceholder": "أخبرنا المزيد (اختياري)",
+    "reasons": {
+      "inaccurate-citation": "استشهاد غير دقيق",
+      "not-authentic": "غير صحيح",
+      "unhelpful": "غير مفيد",
+      "wrong-tone": "أسلوب غير مناسب",
+      "other": "شيء آخر"
+    },
+    "promptTitle": "كيف هو أداء Criterion؟",
+    "promptSubtitle": "هل من شيء ينبغي أن نعرفه؟ ما الخطأ، وما الناقص، وما الذي تودّ رؤيته لاحقًا.",
+    "promptPlaceholder": "رأيك (اختياري)",
+    "promptThanks": "جزاك الله خيرًا — شكرًا لمساعدتنا على التحسين.",
+    "promptEmpty": "يرجى إضافة تقييم أو تعليق قبل الإرسال.",
+    "ratingLabel": "قيّم بـ {rating} من 5",
+    "notNow": "ليس الآن",
+    "dismiss": "إغلاق",
+    "send": "إرسال"
   }
 }

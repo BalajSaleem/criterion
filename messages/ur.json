@@ -79,5 +79,33 @@
     "searchCta": "احادیث تلاش کریں",
     "breadcrumb": "احادیث",
     "home": "ہوم"
+  },
+  "feedback": {
+    "upvoteTooltip": "اچھا جواب",
+    "downvoteTooltip": "مسئلے کی اطلاع دیں",
+    "upvoteThanks": "آپ کی رائے کا شکریہ۔",
+    "downvoteThanks": "شکریہ — اس سے ہمیں بہتری میں مدد ملتی ہے۔",
+    "submitting": "رائے بھیجی جا رہی ہے...",
+    "submitFailed": "آپ کی رائے نہیں بھیجی جا سکی۔ براہ کرم دوبارہ کوشش کریں۔",
+    "copied": "کلپ بورڈ پر کاپی ہو گیا!",
+    "copyEmpty": "کاپی کرنے کے لیے کوئی متن نہیں ہے!",
+    "reasonTitle": "اس جواب میں کیا خرابی تھی؟",
+    "reasonPlaceholder": "مزید بتائیں (اختیاری)",
+    "reasons": {
+      "inaccurate-citation": "غلط حوالہ",
+      "not-authentic": "غیر مستند",
+      "unhelpful": "غیر مفید",
+      "wrong-tone": "نامناسب انداز",
+      "other": "کوئی اور بات"
+    },
+    "promptTitle": "Criterion کیسا کام کر رہا ہے؟",
+    "promptSubtitle": "کیا ہمیں کچھ جاننا چاہیے؟ کیا غلط تھا، کیا کمی ہے، اور آپ آگے کیا چاہتے ہیں۔",
+    "promptPlaceholder": "آپ کی رائے (اختیاری)",
+    "promptThanks": "جزاک اللہ خیر — بہتری میں مدد کے لیے شکریہ۔",
+    "promptEmpty": "بھیجنے سے پہلے درجہ بندی یا تبصرہ شامل کریں۔",
+    "ratingLabel": "5 میں سے {rating} درجہ دیں",
+    "notNow": "ابھی نہیں",
+    "dismiss": "بند کریں",
+    "send": "بھیجیں"
   }
 }

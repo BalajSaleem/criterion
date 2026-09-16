@@ -9,8 +9,10 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
   vector,
@@ -89,20 +91,70 @@ export const voteDeprecated = pgTable(
 
 export type VoteDeprecated = InferSelectModel<typeof voteDeprecated>;
 
+/**
+ * A source (Quran verse or Hadith narration) that the rated answer cited.
+ * Extracted server-side from the message's tool call outputs so that
+ * "which sources produce bad answers" is directly queryable.
+ */
+export type FeedbackSource =
+  | { type: "quran"; ref: string }
+  | { type: "hadith"; collection: string; ref: string };
+
+export const FEEDBACK_SCOPES = ["message", "conversation"] as const;
+export type FeedbackScope = (typeof FEEDBACK_SCOPES)[number];
+
+export const FEEDBACK_REASONS = [
+  "inaccurate-citation",
+  "not-authentic",
+  "unhelpful",
+  "wrong-tone",
+  "other",
+] as const;
+export type FeedbackReason = (typeof FEEDBACK_REASONS)[number];
+
+/**
+ * Carries both per-message feedback (thumbs, plus an optional reason and
+ * comment) and conversation-level feedback (a 1-5 rating plus an optional
+ * comment). Conversation rows anchor to the last assistant message so the
+ * messageId foreign key still holds; `scope` tells the two apart.
+ *
+ * The surrogate `id` replaced the old (chatId, messageId) composite primary
+ * key: a user may both downvote the final answer and rate the conversation,
+ * which would collide. The partial unique indexes below preserve the original
+ * one-vote-per-message guarantee and add one-rating-per-chat.
+ */
 export const vote = pgTable(
   "Vote_v2",
   {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
     chatId: uuid("chatId")
       .notNull()
       .references(() => chat.id),
     messageId: uuid("messageId")
       .notNull()
       .references(() => message.id),
-    isUpvoted: boolean("isUpvoted").notNull(),
+    // Null for conversation-scope rows, which carry a rating instead.
+    isUpvoted: boolean("isUpvoted"),
+    scope: varchar("scope", { enum: FEEDBACK_SCOPES })
+      .notNull()
+      .default("message"),
+    // 1-5, conversation scope only.
+    rating: smallint("rating"),
+    reason: varchar("reason", { enum: FEEDBACK_REASONS }),
+    comment: text("comment"),
+    sources: jsonb("sources").$type<FeedbackSource[] | null>(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
   },
   (table) => {
     return {
-      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+      messageScopeIdx: uniqueIndex("Vote_v2_message_scope_idx")
+        .on(table.chatId, table.messageId)
+        .where(sql`${table.scope} = 'message'`),
+      conversationScopeIdx: uniqueIndex("Vote_v2_conversation_scope_idx")
+        .on(table.chatId)
+        .where(sql`${table.scope} = 'conversation'`),
+      createdAtIdx: index("Vote_v2_createdAt_idx").on(table.createdAt),
     };
   }
 );

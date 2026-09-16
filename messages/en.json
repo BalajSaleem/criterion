@@ -79,5 +79,33 @@
     "searchCta": "Search Hadith",
     "breadcrumb": "Hadith",
     "home": "Home"
+  },
+  "feedback": {
+    "upvoteTooltip": "Good answer",
+    "downvoteTooltip": "Report a problem",
+    "upvoteThanks": "Thank you for the feedback.",
+    "downvoteThanks": "Thank you — this helps us improve.",
+    "submitting": "Sending feedback...",
+    "submitFailed": "Could not send your feedback. Please try again.",
+    "copied": "Copied to clipboard!",
+    "copyEmpty": "There's no text to copy!",
+    "reasonTitle": "What was wrong with this answer?",
+    "reasonPlaceholder": "Tell us more (optional)",
+    "reasons": {
+      "inaccurate-citation": "Inaccurate citation",
+      "not-authentic": "Not authentic",
+      "unhelpful": "Unhelpful",
+      "wrong-tone": "Wrong tone",
+      "other": "Something else"
+    },
+    "promptTitle": "How is Criterion doing?",
+    "promptSubtitle": "Anything we should know? What was wrong, what's missing, what you'd want next.",
+    "promptPlaceholder": "Your thoughts (optional)",
+    "promptThanks": "JazakAllah khair — thank you for helping us improve.",
+    "promptEmpty": "Please add a rating or a comment before sending.",
+    "ratingLabel": "Rate {rating} out of 5",
+    "notNow": "Not now",
+    "dismiss": "Dismiss",
+    "send": "Send"
   }
 }
