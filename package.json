@@ -30,7 +30,6 @@
     "clear:hadith": "npx tsx scripts/clear-hadith-data.ts",
     "ingest:hadith": "npx tsx scripts/ingest-hadith.ts",
     "reembed:hadith": "npx tsx scripts/reembed-hadith.ts",
-    "feedback:report": "npx tsx scripts/feedback-report.ts",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
   },
   "dependencies": {
