@@ -106,5 +106,21 @@
     "notNow": "Şimdi değil",
     "dismiss": "Kapat",
     "send": "Gönder"
+  },
+  "disclosure": {
+    "inlineNotice": "Yapay zekâ yanıtı — âlim yerine geçmez",
+    "inlineAction": "Nasıl kullanmalı",
+    "triggerLabel": "Criterion'un yanıtları nasıl kullanılır",
+    "panelTitle": "Criterion bir yapay zekâdır",
+    "generatedTitle": "Üretilmiştir, vahiy değildir.",
+    "generatedBody": "Bu yanıtları bir dil modeli yazar; kaynağı yanlış okuyabilir, bağlamı kaçırabilir ya da hata yapabilir.",
+    "sourcesTitle": "Delil kaynaklardadır.",
+    "sourcesBody": "Kur'an ve sahih Sünnet esastır; Criterion yalnızca onlara yönlendirir. Her atfı açıp yerinde okuyun.",
+    "scholarsTitle": "Önemli meseleleri ehline sorun.",
+    "scholarsBody": "Hükümler, ihtilaflı meseleler ve kendi özel durumunuz için ehil bir âlime danışın. Burası öğrenmek içindir, fetva kaynağı değildir.",
+    "howItWorks": "Nasıl çalışır",
+    "faq": "SSS",
+    "acknowledge": "Anladım",
+    "messageLabel": "Yapay zekâ yanıtı — atıf yapılan kaynaklardan doğrulayın"
   }
 }

@@ -146,8 +146,9 @@ export default function PrivacyPage() {
             or dark mode
           </li>
           <li>
-            <strong>Disclaimer acceptance:</strong> To remember that you've
-            read our first-visit disclaimer
+            <strong>AI notice acknowledgement:</strong> To remember that
+            you've read the notice explaining that Criterion's answers are
+            AI-generated, so it opens expanded only on your first visit
           </li>
         </ul>
         <p>

@@ -2,6 +2,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { memo, useEffect, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -44,6 +45,11 @@ const PurePreviewMessage = ({
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<"view" | "edit">("view");
+  const t = useTranslations("disclosure");
+  // Per-answer half of the disclosure: the avatar that marks a turn as the
+  // assistant's also names it as machine-generated, for sighted and screen
+  // reader users alike.
+  const disclosureLabel = t("messageLabel");
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === "file"
@@ -66,7 +72,12 @@ const PurePreviewMessage = ({
         })}
       >
         {message.role === "assistant" && (
-          <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
+          <div
+            aria-label={disclosureLabel}
+            className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border"
+            role="img"
+            title={disclosureLabel}
+          >
             <div className={cn({ "animate-spin": isLoading })}>
               <SparklesIcon size={14} />
             </div>

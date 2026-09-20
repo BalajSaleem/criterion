@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+import { AiNotice } from "@/components/ai-notice";
 import { ChatFooter } from "@/components/chat-footer";
 import { ChatHeader } from "@/components/chat-header";
 import {
@@ -20,7 +21,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
-import { useFirstVisitDisclaimer } from "@/hooks/use-first-visit-disclaimer";
 import type { Vote } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { Attachment, ChatMessage } from "@/lib/types";
@@ -153,8 +153,6 @@ export function Chat({
     setMessages,
   });
 
-  useFirstVisitDisclaimer();
-
   return (
     <>
       <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
@@ -177,7 +175,7 @@ export function Chat({
               votes={votes}
             />
             {!isReadonly && (
-              <div className="w-full max-w-4xl">
+              <div className="flex w-full max-w-4xl flex-col gap-2">
                 <MultimodalInput
                   attachments={attachments}
                   chatId={id}
@@ -194,6 +192,7 @@ export function Chat({
                   stop={stop}
                   usage={usage}
                 />
+                <AiNotice />
               </div>
             )}
           </div>
@@ -209,7 +208,7 @@ export function Chat({
               status={status}
               votes={votes}
             />
-            <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+            <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl flex-col gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
               {!isReadonly && (
                 <MultimodalInput
                   attachments={attachments}
@@ -228,6 +227,7 @@ export function Chat({
                   usage={usage}
                 />
               )}
+              <AiNotice className="px-0 md:px-0" />
             </div>
           </>
         )}

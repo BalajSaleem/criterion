@@ -172,6 +172,17 @@ lib/ai/tools/
 
 - `QuranVerses` - Displays verses with ±2 context, links to Quran.com
 - `HadithNarrations` - Displays hadiths with grade badges, collapsible narrator chains, links to Sunnah.com
+- `AiNotice` - Permanent AI disclosure (`components/ai-notice.tsx`), rendered under the composer in chat and on `/speak`
+
+**AI Disclosure (`AiNotice`)**
+
+Three layers, one component, so a reader always knows the answers are machine-generated and how to weigh them:
+
+1. A quiet line under the composer, always on screen: *AI-generated guidance — not a scholar*
+2. A panel the line opens: generated not revealed · the sources are the proof · take serious matters to people of knowledge, with links to `/how-it-works` and `/faq`
+3. On a first visit the panel starts open; closing it stores `criterion-ai-notice-v1` in localStorage and it stays collapsed afterwards
+
+Per answer, the assistant avatar in `components/message.tsx` carries the same disclosure as its accessible name and tooltip. All copy lives in the `disclosure` namespace of `messages/{en,ar,tr,ur}.json`.
 
 **Quran Page Components:** (Shared between Surah and Verse pages)
 

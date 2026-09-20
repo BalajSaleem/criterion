@@ -5,6 +5,7 @@ import { VoiceControls } from "@/components/speak/voice-controls";
 import { VoiceTranscript } from "@/components/speak/voice-transcript";
 import useVoiceSession from "@/hooks/use-voice-session";
 import { CriterionBranding } from "@/components/criterion-branding";
+import { AiNotice } from "@/components/ai-notice";
 
 export function SpeakInterface() {
   const {
@@ -41,6 +42,8 @@ export function SpeakInterface() {
           />
 
           <VoiceTranscript conversation={conversation} />
+
+          <AiNotice />
         </div>
       </main>
     </div>

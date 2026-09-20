@@ -106,5 +106,21 @@
     "notNow": "Not now",
     "dismiss": "Dismiss",
     "send": "Send"
+  },
+  "disclosure": {
+    "inlineNotice": "AI-generated guidance — not a scholar",
+    "inlineAction": "How to use this",
+    "triggerLabel": "How to use Criterion's answers",
+    "panelTitle": "Criterion is an AI",
+    "generatedTitle": "Generated, not revealed.",
+    "generatedBody": "A language model writes these answers. It can misread a source, miss context, or simply be wrong.",
+    "sourcesTitle": "The sources are the proof.",
+    "sourcesBody": "The Quran and the authentic Sunnah are the authority — Criterion only points you to them. Open every citation and read it in its place.",
+    "scholarsTitle": "Take serious matters to people of knowledge.",
+    "scholarsBody": "For rulings, disputed questions and your own circumstances, ask a qualified scholar. This is a place to learn, not a source of fatwa.",
+    "howItWorks": "How it works",
+    "faq": "FAQ",
+    "acknowledge": "Got it",
+    "messageLabel": "AI-generated answer — verify it against the cited sources"
   }
 }
