@@ -3,7 +3,6 @@
 import { generateText, type UIMessage } from "ai";
 import { cookies } from "next/headers";
 import type { VisibilityType } from "@/components/visibility-selector";
-import { CHAT_MODE_COOKIE, type ChatMode } from "@/lib/ai/modes";
 import { myProvider } from "@/lib/ai/providers";
 import {
   deleteMessagesByChatIdAfterTimestamp,
@@ -14,11 +13,6 @@ import {
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
   cookieStore.set("chat-model", model);
-}
-
-export async function saveChatModeAsCookie(mode: ChatMode) {
-  const cookieStore = await cookies();
-  cookieStore.set(CHAT_MODE_COOKIE, mode, { maxAge: 60 * 60 * 24 * 365 });
 }
 
 export async function generateTitleFromUserMessage({
