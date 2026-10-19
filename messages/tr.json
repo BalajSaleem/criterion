@@ -106,5 +106,26 @@
     "notNow": "Şimdi değil",
     "dismiss": "Kapat",
     "send": "Gönder"
+  },
+  "modes": {
+    "label": "Kim soruyor",
+    "seeker": "İslam'ı tanıyorum",
+    "muslim": "Müslümanım"
+  },
+  "muslim": {
+    "welcome": "Esselâmü aleyküm",
+    "subtitle": "Kur'an, Sünnet, klasik tefsirler ve âlimlerin cevaplarıyla dininizi daha derinden öğrenin.",
+    "placeholder": "Namaz, oruç, bir ayet, bir hadis veya imanınız hakkında sorun...",
+    "suggestions": [
+      "Astım spreyi kullanmak orucu bozar mı?",
+      "Âyetü'l-Kürsî'yi (2:255) ve faziletini açıkla",
+      "Aynı günaha tekrar tekrar düşüyorum. Samimi tövbe nasıl edilir?",
+      "Kaç rekât kıldığımı unuttum. Ne yapmalıyım?"
+    ],
+    "tafsir": "Tefsir",
+    "readFull": "Tefsirin tamamını oku",
+    "scholarly": "Âlimlerin cevapları",
+    "readAnswer": "Cevabın tamamını oku",
+    "scholarlyNote": "{source} cevapları, {supervisor} gözetiminde. Mezhepler arasında görüş farkı olduğunda mezhebinize veya güvendiğiniz bir hocaya uyun."
   }
 }

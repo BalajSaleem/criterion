@@ -43,5 +43,6 @@ yarn-error.log*
 /playwright/*
 
 *.gz
+!data/scholarly/*.gz
 data/islam_qa.ndjson.gz
 .omc/

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CriterionBranding } from "./criterion-branding";
 import { PlusIcon } from "./icons";
 import { LanguageSwitcher } from "./language-switcher";
+import { ModeToggle } from "./mode-toggle";
 import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
 
@@ -45,6 +46,8 @@ function PureChatHeader({
           <PlusIcon />
         </Button>
       )}
+
+      {!isReadonly && <ModeToggle className="order-3 hidden md:inline-flex" />}
 
       {!isReadonly && (
         <VisibilitySelector

@@ -19,12 +19,15 @@ import { getUsage } from "tokenlens/helpers";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import type { ChatMode } from "@/lib/ai/modes";
 import type { ChatModel } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { getQuranByReference } from "@/lib/ai/tools/get-quran-by-reference";
+import { getTafsir } from "@/lib/ai/tools/get-tafsir";
 import { queryHadith } from "@/lib/ai/tools/query-hadith";
 import { queryQuran } from "@/lib/ai/tools/query-quran";
+import { searchScholarlyAnswers } from "@/lib/ai/tools/search-scholarly-answers";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -107,11 +110,13 @@ export async function POST(request: Request) {
       message,
       selectedChatModel,
       selectedVisibilityType,
+      selectedMode,
     }: {
       id: string;
       message: ChatMessage;
       selectedChatModel: ChatModel["id"];
       selectedVisibilityType: VisibilityType;
+      selectedMode: ChatMode;
     } = requestBody;
 
     const session = await timeAsync("chat:auth", () => auth());
@@ -223,15 +228,26 @@ export async function POST(request: Request) {
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt(requestHints),
+          system: systemPrompt(requestHints, selectedMode),
           messages: await convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_transform: smoothStream(),
-          activeTools: ["queryQuran", "queryHadith", "getQuranByReference"],
+          activeTools:
+            selectedMode === "muslim"
+              ? [
+                  "queryQuran",
+                  "queryHadith",
+                  "getQuranByReference",
+                  "getTafsir",
+                  "searchScholarlyAnswers",
+                ]
+              : ["queryQuran", "queryHadith", "getQuranByReference"],
           tools: {
             queryQuran,
             queryHadith,
             getQuranByReference,
+            getTafsir,
+            searchScholarlyAnswers,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

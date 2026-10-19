@@ -19,8 +19,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAutoResume } from "@/hooks/use-auto-resume";
+import { ChatModeContext, useChatModeState } from "@/hooks/use-chat-mode";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
 import { useFirstVisitDisclaimer } from "@/hooks/use-first-visit-disclaimer";
+import { type ChatMode, DEFAULT_CHAT_MODE } from "@/lib/ai/modes";
 import type { Vote } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { Attachment, ChatMessage } from "@/lib/types";
@@ -41,6 +43,8 @@ export function Chat({
   isReadonly,
   autoResume,
   initialLastContext,
+  initialMode = DEFAULT_CHAT_MODE,
+  persistInitialMode = false,
 }: {
   id: string;
   initialMessages: ChatMessage[];
@@ -49,7 +53,13 @@ export function Chat({
   isReadonly: boolean;
   autoResume: boolean;
   initialLastContext?: AppUsage;
+  initialMode?: ChatMode;
+  persistInitialMode?: boolean;
 }) {
+  const { value: chatModeValue, modeRef } = useChatModeState(
+    initialMode,
+    persistInitialMode
+  );
   const { visibilityType } = useChatVisibility({
     chatId: id,
     initialVisibilityType,
@@ -91,6 +101,7 @@ export function Chat({
             message: request.messages.at(-1),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibilityType,
+            selectedMode: modeRef.current,
             ...request.body,
           },
         };
@@ -156,7 +167,7 @@ export function Chat({
   useFirstVisitDisclaimer();
 
   return (
-    <>
+    <ChatModeContext.Provider value={chatModeValue}>
       <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
         <ChatHeader
           chatId={id}
@@ -264,6 +275,6 @@ export function Chat({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </ChatModeContext.Provider>
   );
 }

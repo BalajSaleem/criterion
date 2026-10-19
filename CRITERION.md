@@ -31,6 +31,16 @@ User asks question
   → Stream response + citations to UI
 ```
 
+### Muslim Mode (`/muslim`, or the "I'm Muslim" toggle)
+
+For practising Muslims who want to go deeper. The mode is stored in the `chat-mode` cookie and sent as `selectedMode` with each message.
+
+- **Prompt** (`muslimPrompt` in `lib/ai/prompts.ts`): classifies the question (practical ruling, verse, hadith, aqeedah, heart/struggle, seerah) and shapes the answer and depth to fit. Sticks to consensus/majority positions, flags recognised differences between the schools without taking sides, and stays out of sectarian/political topics.
+- **Extra tools** (only active in Muslim mode):
+  - `getTafsir` (`lib/ai/tools/get-tafsir.ts`): Al-Mukhtasar, Tafsir Ibn Kathir and Ma'arif al-Qur'an per ayah, from the Quranic Universal Library (qul.tarteel.ai) via the `spa5k/tafsir_api` jsDelivr mirror. No DB needed.
+  - `searchScholarlyAnswers` (`lib/ai/tools/search-scholarly-answers.ts`): semantic search over ~18K IslamQA.info answers (CC BY-NC 4.0). File-based index in `data/scholarly/` (Int8 Gemini embeddings + gzipped metadata), searched in memory by `lib/scholarly/search.ts`. Contested topics are excluded at build time (`EXCLUDED_TOPICS` in `lib/scholarly/config.ts`).
+- Rebuild the index: download the CSV from `huggingface.co/datasets/kingkaung/english_islamqainfo`, then `pnpm build:scholarly <csv>`.
+
 ### Voice Interface (`/speak`)
 
 ```

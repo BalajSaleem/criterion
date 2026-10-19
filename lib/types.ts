@@ -4,6 +4,8 @@ import { z } from "zod";
 import type { queryQuran } from "./ai/tools/query-quran";
 import type { queryHadith } from "./ai/tools/query-hadith";
 import type { getQuranByReference } from "./ai/tools/get-quran-by-reference";
+import type { getTafsir } from "./ai/tools/get-tafsir";
+import type { searchScholarlyAnswers } from "./ai/tools/search-scholarly-answers";
 import type { Suggestion } from "./db/schema";
 import type { AppUsage } from "./usage";
 
@@ -18,11 +20,15 @@ export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 type queryQuranTool = InferUITool<typeof queryQuran>;
 type queryHadithTool = InferUITool<typeof queryHadith>;
 type getQuranByReferenceTool = InferUITool<typeof getQuranByReference>;
+type getTafsirTool = InferUITool<typeof getTafsir>;
+type searchScholarlyAnswersTool = InferUITool<typeof searchScholarlyAnswers>;
 
 export type ChatTools = {
   queryQuran: queryQuranTool;
   queryHadith: queryHadithTool;
   getQuranByReference: getQuranByReferenceTool;
+  getTafsir: getTafsirTool;
+  searchScholarlyAnswers: searchScholarlyAnswersTool;
 };
 
 export type CustomUIDataTypes = {

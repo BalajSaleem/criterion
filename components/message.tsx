@@ -23,6 +23,8 @@ import { PreviewAttachment } from "./preview-attachment";
 import { QuranVerses } from "./quran-verses";
 import { QuranReference } from "./quran-reference";
 import { HadithNarrations } from "./hadith-narrations";
+import { ScholarlyAnswers } from "./scholarly-answers";
+import { TafsirPassages } from "./tafsir-passages";
 
 const PurePreviewMessage = ({
   chatId,
@@ -228,6 +230,56 @@ const PurePreviewMessage = ({
                         output={
                           !part.errorText && part.output ? (
                             <QuranReference output={part.output as any} />
+                          ) : null
+                        }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === "tool-getTafsir") {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={false} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-getTafsir" />
+                  <ToolContent>
+                    {(state === "input-available" ||
+                      state === "output-available") &&
+                      part.input && <ToolInput input={part.input} />}
+                    {state === "output-available" && (
+                      <ToolOutput
+                        errorText={part.errorText}
+                        output={
+                          !part.errorText && part.output ? (
+                            <TafsirPassages output={part.output} />
+                          ) : null
+                        }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === "tool-searchScholarlyAnswers") {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={false} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-searchScholarlyAnswers" />
+                  <ToolContent>
+                    {(state === "input-available" ||
+                      state === "output-available") &&
+                      part.input && <ToolInput input={part.input} />}
+                    {state === "output-available" && (
+                      <ToolOutput
+                        errorText={part.errorText}
+                        output={
+                          !part.errorText && part.output ? (
+                            <ScholarlyAnswers output={part.output} />
                           ) : null
                         }
                       />

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { useTranslations } from "next-intl";
 import { saveChatModelAsCookie } from "@/app/(chat)/actions";
+import { useChatMode } from "@/hooks/use-chat-mode";
 import { SelectItem } from "@/components/ui/select";
 import { chatModels } from "@/lib/ai/models";
 import { myProvider } from "@/lib/ai/providers";
@@ -84,6 +85,8 @@ function PureMultimodalInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const t = useTranslations("chat");
+  const tMuslim = useTranslations("muslim");
+  const { mode } = useChatMode();
 
   const adjustHeight = useCallback(() => {
     if (textareaRef.current) {
@@ -308,7 +311,9 @@ function PureMultimodalInput({
             maxHeight={200}
             minHeight={44}
             onChange={handleInput}
-            placeholder={t("placeholder")}
+            placeholder={
+              mode === "muslim" ? tMuslim("placeholder") : t("placeholder")
+            }
             ref={textareaRef}
             rows={1}
             value={input}

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/app/(auth)/auth";
 import { Chat } from "@/components/chat";
+import { CHAT_MODE_COOKIE, isChatMode } from "@/lib/ai/modes";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { getChatById, getMessagesByChatId } from "@/lib/db/queries";
 import { convertToUIMessages } from "@/lib/utils";
@@ -55,28 +56,16 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get("chat-model");
-
-  if (!chatModelFromCookie) {
-    return (
-      <Chat
-        autoResume={true}
-        id={chat.id}
-        initialChatModel={DEFAULT_CHAT_MODEL}
-        initialLastContext={chat.lastContext ?? undefined}
-        initialMessages={uiMessages}
-        initialVisibilityType={chat.visibility}
-        isReadonly={session?.user?.id !== chat.userId}
-      />
-    );
-  }
+  const modeFromCookie = cookieStore.get(CHAT_MODE_COOKIE)?.value;
 
   return (
     <Chat
       autoResume={true}
       id={chat.id}
-      initialChatModel={chatModelFromCookie.value}
+      initialChatModel={chatModelFromCookie?.value ?? DEFAULT_CHAT_MODEL}
       initialLastContext={chat.lastContext ?? undefined}
       initialMessages={uiMessages}
+      initialMode={isChatMode(modeFromCookie) ? modeFromCookie : undefined}
       initialVisibilityType={chat.visibility}
       isReadonly={session?.user?.id !== chat.userId}
     />

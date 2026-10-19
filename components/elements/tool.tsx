@@ -3,10 +3,12 @@
 import type { ToolUIPart } from "ai";
 import {
   AlertCircle,
+  BookOpenText,
   BookText,
   Bookmark,
   Check,
   ChevronDown,
+  Library,
   Loader2,
   ScrollText,
 } from "lucide-react";
@@ -50,6 +52,14 @@ const getToolIcon = (type: ToolUIPart["type"]) => {
       icon: <Bookmark className="size-3.5" />,
       colorClass: "text-amber-600 dark:text-amber-400",
     },
+    "tool-getTafsir": {
+      icon: <BookOpenText className="size-3.5" />,
+      colorClass: "text-violet-600 dark:text-violet-400",
+    },
+    "tool-searchScholarlyAnswers": {
+      icon: <Library className="size-3.5" />,
+      colorClass: "text-teal-600 dark:text-teal-400",
+    },
   };
 
   return icons[type] || { icon: <BookText className="size-3.5" />, colorClass: "text-muted-foreground" };
@@ -83,6 +93,24 @@ const getToolDisplayMessage = (type: ToolUIPart["type"], state: ToolUIPart["stat
       "output-available": "Found verse reference",
       "output-error": "Failed to get verse reference",
       "output-denied": "Verse lookup was denied",
+    },
+    "tool-getTafsir": {
+      "input-streaming": "Preparing to consult the tafsir...",
+      "input-available": "Consulting the classical tafsir...",
+      "approval-requested": "Approval requested for tafsir lookup",
+      "approval-responded": "Approval received for tafsir lookup",
+      "output-available": "Found the scholars' explanation of the verse",
+      "output-error": "Failed to get tafsir",
+      "output-denied": "Tafsir lookup was denied",
+    },
+    "tool-searchScholarlyAnswers": {
+      "input-streaming": "Preparing to search scholars' answers...",
+      "input-available": "Searching scholars' answers...",
+      "approval-requested": "Approval requested for scholarly search",
+      "approval-responded": "Approval received for scholarly search",
+      "output-available": "Found answers from scholars",
+      "output-error": "Encountered an error while searching",
+      "output-denied": "Scholarly search was denied",
     },
   };
 

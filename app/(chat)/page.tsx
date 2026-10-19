@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
+import { CHAT_MODE_COOKIE, isChatMode } from "@/lib/ai/modes";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 import { isBot } from "@/lib/bot-detection";
@@ -38,6 +39,7 @@ export default async function Page() {
   }
 
   const modelId = cookieStore.get("chat-model")?.value || DEFAULT_CHAT_MODEL;
+  const mode = cookieStore.get(CHAT_MODE_COOKIE)?.value;
   const id = generateUUID();
 
   return (
@@ -46,6 +48,7 @@ export default async function Page() {
       id={id}
       initialChatModel={modelId}
       initialMessages={[]}
+      initialMode={isChatMode(mode) ? mode : undefined}
       initialVisibilityType="private"
       isReadonly={false}
       key={id}

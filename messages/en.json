@@ -106,5 +106,26 @@
     "notNow": "Not now",
     "dismiss": "Dismiss",
     "send": "Send"
+  },
+  "modes": {
+    "label": "Who is asking",
+    "seeker": "Exploring Islam",
+    "muslim": "I'm Muslim"
+  },
+  "muslim": {
+    "welcome": "Assalamu alaykum",
+    "subtitle": "Go deeper into your deen with the Quran, Sunnah, classical tafsir and answers from scholars.",
+    "placeholder": "Ask about salah, fasting, a verse, a hadith, your iman...",
+    "suggestions": [
+      "Does using an asthma inhaler break my fast?",
+      "Explain Ayat al-Kursi (2:255) and its virtues",
+      "I keep falling into the same sin. How do I sincerely repent?",
+      "I forgot how many rak'ahs I prayed. What should I do?"
+    ],
+    "tafsir": "Tafsir",
+    "readFull": "Read the full tafsir",
+    "scholarly": "Scholars' answers",
+    "readAnswer": "Read the full answer",
+    "scholarlyNote": "Answers from {source}, supervised by {supervisor}. Where the schools of fiqh differ, follow your madhhab or a trusted local scholar."
   }
 }

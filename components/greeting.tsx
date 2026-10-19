@@ -1,9 +1,14 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useChatMode } from "@/hooks/use-chat-mode";
+import { ModeToggle } from "./mode-toggle";
 
 export const Greeting = () => {
   const t = useTranslations("chat");
+  const tMuslim = useTranslations("muslim");
+  const { mode } = useChatMode();
+  const isMuslimMode = mode === "muslim";
 
   return (
     <div
@@ -16,9 +21,10 @@ export const Greeting = () => {
         className="font-semibold text-xl md:text-2xl text-center"
         exit={{ opacity: 0, y: 10 }}
         initial={{ opacity: 0, y: 10 }}
+        key={mode}
         transition={{ delay: 0.5 }}
       >
-        {t("welcome")}
+        {isMuslimMode ? tMuslim("welcome") : t("welcome")}
       </motion.div>
       <motion.div
         animate={{ opacity: 1, y: 0 }}
@@ -27,20 +33,34 @@ export const Greeting = () => {
         initial={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.6 }}
       >
-        {t("getAnswersBefore")}{" "}
-        <Link
-          href="/quran/search"
-          className="text-zinc-700 dark:text-zinc-300 hover:underline"
-        >
-          {t("quranLink")}
-        </Link>{" "}
-        {t("and")}{" "}
-        <Link
-          href="/hadith/search"
-          className="text-zinc-700 dark:text-zinc-300 hover:underline"
-        >
-          {t("sunnahLink")}
-        </Link>
+        {isMuslimMode ? (
+          tMuslim("subtitle")
+        ) : (
+          <>
+            {t("getAnswersBefore")}{" "}
+            <Link
+              href="/quran/search"
+              className="text-zinc-700 dark:text-zinc-300 hover:underline"
+            >
+              {t("quranLink")}
+            </Link>{" "}
+            {t("and")}{" "}
+            <Link
+              href="/hadith/search"
+              className="text-zinc-700 dark:text-zinc-300 hover:underline"
+            >
+              {t("sunnahLink")}
+            </Link>
+          </>
+        )}
+      </motion.div>
+      <motion.div
+        animate={{ opacity: 1 }}
+        className="mt-4 flex justify-center md:hidden"
+        initial={{ opacity: 0 }}
+        transition={{ delay: 0.7 }}
+      >
+        <ModeToggle />
       </motion.div>
     </div>
   );

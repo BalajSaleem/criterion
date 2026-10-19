@@ -4,6 +4,7 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { motion } from "framer-motion";
 import { memo } from "react";
 import { useTranslations } from "next-intl";
+import { useChatMode } from "@/hooks/use-chat-mode";
 import type { ChatMessage } from "@/lib/types";
 import { Suggestion } from "./elements/suggestion";
 import type { VisibilityType } from "./visibility-selector";
@@ -16,7 +17,11 @@ type SuggestedActionsProps = {
 
 function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
   const t = useTranslations("chat");
-  const suggestedActions = t.raw("suggestions") as string[];
+  const tMuslim = useTranslations("muslim");
+  const { mode } = useChatMode();
+  const suggestedActions = (
+    mode === "muslim" ? tMuslim.raw("suggestions") : t.raw("suggestions")
+  ) as string[];
 
   return (
     <div
