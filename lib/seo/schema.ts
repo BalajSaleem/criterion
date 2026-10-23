@@ -191,7 +191,7 @@ export function createHadithArticleSchema(hadith: {
       } : undefined,
     },
     datePublished: new Date('2024-01-01').toISOString(), // Collection compilation date proxy
-    dateModified: new Date().toISOString(),
+    dateModified: new Date('2024-01-01').toISOString(),
   };
 }
 

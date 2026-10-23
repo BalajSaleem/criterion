@@ -520,6 +520,8 @@ volume = sqrt(sum((sample - 128)² / 128²) / samples);
 | Voice audio visualization| 60 FPS    | Web Audio API + Canvas             |
 | Total query time         | <200ms    | Optimized with HNSW + indexes      |
 
+Quran/hadith lookup queries in `lib/db/queries.ts` use `"use cache"` + `cacheLife("max")` (the text never changes), so reading pages don't hit Postgres per request. The DB client closes idle connections after 20s so Neon can scale to zero.
+
 ---
 
 ## 13. Limitations
