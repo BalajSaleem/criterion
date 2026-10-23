@@ -4,6 +4,7 @@ import {
   createUIMessageStream,
   JsonToSseTransformStream,
   smoothStream,
+  UI_MESSAGE_STREAM_HEADERS,
   stepCountIs,
   streamText,
 } from "ai";
@@ -324,7 +325,9 @@ export async function POST(request: Request) {
       },
     });
 
-    return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+    return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
+      headers: UI_MESSAGE_STREAM_HEADERS,
+    });
   } catch (error) {
     const vercelId = request.headers.get("x-vercel-id");
 
