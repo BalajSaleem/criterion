@@ -14,6 +14,7 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
+import { cacheLife } from "next/cache";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
 import type { AppUsage } from "../usage";
@@ -676,6 +677,9 @@ export async function getVerseRange({
   endAyah: number;
   language?: string;
 }) {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { quranVerse, quranTranslation } = await import("./schema");
 
@@ -759,6 +763,9 @@ export async function getVersesBySurah({
   surahNumber: number;
   language?: string;
 }) {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { quranVerse, quranTranslation } = await import("./schema");
 
@@ -834,6 +841,9 @@ export async function getVerseWithContext({
   contextWindow?: number;
   language?: string;
 }) {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { quranVerse, quranTranslation } = await import("./schema");
 
@@ -1050,6 +1060,9 @@ export async function getVerseBySurahAndAyah({
   ayahNumber: number;
   language?: string;
 }) {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { quranVerse, quranTranslation } = await import("./schema");
 
@@ -1145,6 +1158,9 @@ export async function getHadithByCollectionAndNumber({
   collection: string;
   hadithNumber: number;
 }) {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { hadithText } = await import("./schema");
 
@@ -1177,6 +1193,9 @@ export async function getAdjacentHadiths(
   collection: string,
   hadithNumber: number
 ): Promise<{ previous: number | null; next: number | null }> {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { hadithText } = await import("./schema");
 
@@ -1225,6 +1244,9 @@ export async function getAdjacentHadiths(
  * Get collection statistics
  */
 export async function getCollectionStats(collection: string) {
+  "use cache";
+  cacheLife("max");
+
   try {
     const { hadithText } = await import("./schema");
 
