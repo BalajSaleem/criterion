@@ -1,4 +1,8 @@
-import { createUIMessageStream, JsonToSseTransformStream } from "ai";
+import {
+  createUIMessageStream,
+  JsonToSseTransformStream,
+  UI_MESSAGE_STREAM_HEADERS,
+} from "ai";
 import { differenceInSeconds } from "date-fns";
 import { auth } from "@/app/(auth)/auth";
 import {
@@ -111,7 +115,7 @@ export async function GET(
 
     return new Response(
       restoredStream.pipeThrough(new JsonToSseTransformStream()),
-      { status: 200 }
+      { status: 200, headers: UI_MESSAGE_STREAM_HEADERS }
     );
   }
 
