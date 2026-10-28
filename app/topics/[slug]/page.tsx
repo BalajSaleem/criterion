@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -52,6 +53,9 @@ export default async function TopicPage({ params }: TopicPageProps) {
   if (!topic) {
     notFound();
   }
+
+  // Render at request time: the AI Gateway reads the current time before fetching
+  await connection();
 
   // Fetch relevant content using RAG
   const [verses, hadiths] = await Promise.all([
