@@ -1,4 +1,4 @@
-import { google } from "@ai-sdk/google";
+import { gateway } from "@ai-sdk/gateway";
 import { embed, embedMany } from "ai";
 import {
   and,
@@ -20,9 +20,9 @@ import {
 } from "@/lib/db/schema";
 import { PerformanceTimer, timeAsync } from "@/lib/monitoring/performance";
 
-// Using Gemini gemini-embedding-001 (768 dimensions)
+// Using Gemini gemini-embedding-001 via AI Gateway (768 dimensions)
 // Using RETRIEVAL_QUERY task type for all embeddings
-const embeddingModel = google.textEmbedding("gemini-embedding-001");
+const embeddingModel = gateway.embeddingModel("google/gemini-embedding-001");
 const context_window = 2; // ±2 verses for context
 
 /**

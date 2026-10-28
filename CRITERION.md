@@ -64,7 +64,7 @@ User speaks question
 - **AI SDK**: Vercel AI SDK (streamText, tool calling, multi-step agents)
 - **LLM**: GPT5 Mini (primary), GPT4 Turbo (reasoning)
 - **Voice**: OpenAI Realtime API (gpt-4o-realtime-preview-2024-12-17, WebRTC)
-- **Embeddings**: Gemini gemini-embedding-001 (768-dim, RETRIEVAL_QUERY task type)
+- **Embeddings**: Gemini gemini-embedding-001 via AI Gateway (768-dim, RETRIEVAL_QUERY task type)
 - **Database**: PostgreSQL + pgvector (HNSW index), Drizzle ORM
 - **Streaming**: Server-Sent Events (SSE) with `JsonToSseTransformStream`
 
@@ -288,7 +288,7 @@ streamText({
 
 ```typescript
 // lib/ai/embeddings.ts
-const embeddingModel = google.embedding("gemini-embedding-001");
+const embeddingModel = gateway.embeddingModel("google/gemini-embedding-001");
 const context_window = 2;              // ±2 verses for Quran context
 const similarityThreshold = 0.3;       // 30% minimum similarity
 
@@ -311,7 +311,7 @@ providerOptions: {
 # .env.local
 POSTGRES_URL=postgresql://...
 XAI_API_KEY=xai-...
-GOOGLE_GENERATIVE_AI_API_KEY=...
+AI_GATEWAY_API_KEY=...
 ```
 
 ---
